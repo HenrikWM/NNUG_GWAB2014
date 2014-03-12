@@ -38,6 +38,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="GWAB.WebContent" />
+    <Folder Include="Profiles" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="GWAB.WebContent\diagnostics.wadcfg">
@@ -52,6 +53,10 @@
       <RoleType>Web</RoleType>
       <RoleName>GWAB.Web</RoleName>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <PublishProfile Include="Profiles\GWAB2014Production.azurePubxml" />
+    <PublishProfile Include="Profiles\GWAB2014ProductionDebug.azurePubxml" />
   </ItemGroup>
   <!-- Import the target files for this project template -->
   <PropertyGroup>

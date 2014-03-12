@@ -6,9 +6,9 @@ Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "GWAB.Azure", "GWAB.Azure\GW
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GWAB.Web", "GWAB.Web\GWAB.Web.csproj", "{CAC30431-08A2-4FF7-A3EF-1BC774461809}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "01. Application", "01. Application", "{8D865F1C-80AD-4E5A-934D-6B6D4F77A19A}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "01 - Application layer", "01 - Application layer", "{8D865F1C-80AD-4E5A-934D-6B6D4F77A19A}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "30. Deployment", "30. Deployment", "{8F1EA87A-33D7-4068-B939-E7AEAB8C323C}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "99 - Azure Deployment", "99 - Azure Deployment", "{8F1EA87A-33D7-4068-B939-E7AEAB8C323C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
