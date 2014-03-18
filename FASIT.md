@@ -123,8 +123,6 @@ og lim inn øverst i filen:
 
 I mappen `\webrole1.web\Models` opprett en ny modellklasse for Home:
 
-``` 
-
 	using System.ComponentModel.DataAnnotations;
 
 	namespace GWAB.Web.Models
@@ -141,11 +139,7 @@ I mappen `\webrole1.web\Models` opprett en ny modellklasse for Home:
 	    }
 	}
 
-``` 
-
 I samme mappe opprett en ny modellklasse for søketreff:
-
-``` 
 
 	using System.Collections.Generic;
 
@@ -162,11 +156,7 @@ I samme mappe opprett en ny modellklasse for søketreff:
 	    }
 	}
 
-``` 
-
 I samme mappe opprett en ny modellklasse for rss-nyhetene som NEST skal mappe fra vår "page"-mapping i elasticsearch til C#. Merk at det brukes `DataMember` og `Name` for å mappe direkte mellom felter i "page"-mappingen og feltene i `RssItem`-klassen.
-
-``` 
 
 	using System.Runtime.Serialization;
 	
@@ -197,13 +187,9 @@ I samme mappe opprett en ny modellklasse for rss-nyhetene som NEST skal mappe fr
 	    }
 	}
 
-``` 
-
 ##### SearchResult.cshtml
 
 Opprett viewet `SearchResults.cshtml` under `\webrole1.web\views\home` og lim inn følgende kode:
-
-``` 
 
 	@model GWAB.Web.Models.SearchResultsModel
 
@@ -224,14 +210,9 @@ Opprett viewet `SearchResults.cshtml` under `\webrole1.web\views\home` og lim in
 	    }
 	</div>
 
-``` 
-
 ##### HomeController.cs
 
 Lim inn kode i konstruktøren HomeController() for å koble NEST til vår elasticsearch i Windows Azure:
-
-
-``` 
 
 	const string elasticsearchEndpoint = "http://gwab2014-elasticsearch-cluster.cloudapp.net";
 
@@ -244,21 +225,11 @@ Lim inn kode i konstruktøren HomeController() for å koble NEST til vår elasti
 
     _searchClient = new ElasticClient(settings);
 
-``` 
-
 Opprett ny privat klassevariabel `_searchClient` øverst i `HomeController`-klassen:
-
-
-``` 
 
 	private readonly ElasticClient _searchClient;
 
-
-``` 
-
 Lim inn følgende kode for ny action som tar imot søkestrengen, setter søketreffene fra NEST til `Items`-listen i `SearchResultsModel`, og returnerer viewet `SearchResults` med modellen:
-
-``` 
 
 	public ActionResult Search(string querystring)
     {
@@ -277,9 +248,6 @@ Lim inn følgende kode for ny action som tar imot søkestrengen, setter søketre
 
         return View("SearchResults", model);
     }
-
-
-``` 
 
 Test endringene lokalt i Azure-emulatoren ved å merke prosjektet **GWAB.Azure** som "Startup Project" og trykk F5. Søk etter nyheter fra vg.no i søkeboksen og se om det kommer treff. Ha gjerne på breakpoints i "Search"-action så du kan se på spørringene som blir utført av NEST. For innblikk i hva som er indeksert i elasticsearch på *gwab2014-elasticsearch-cluster.cloudapp.net*, gå til [http://gwab2014-elasticsearch-cluster.cloudapp.net/_plugin/head/](http://gwab2014-elasticsearch-cluster.cloudapp.net/_plugin/head/) for å se på dataene.
 
@@ -322,8 +290,6 @@ Du har nå et virtuelt nettverk i Azure. Neste skritt er å melde inn din web ro
 
 Åpne filen `ServiceConfiguration.Cloud.cscfg` og lim inn under `</Role>`:
 
-```
-
 	<NetworkConfiguration>
 	    <VirtualNetworkSite name="gwab2014-we-vnet" />
 	    <AddressAssignments>
@@ -334,8 +300,6 @@ Du har nå et virtuelt nettverk i Azure. Neste skritt er å melde inn din web ro
 	      </InstanceAddress>	      
 	    </AddressAssignments>
 	</NetworkConfiguration>
-
-```
 
 Gå til Azure Management Portal og slett cloud servicen (kan ikke legge til ressurser i et nettverk når man foretar update/upgrade på en cloud service). Velg "Publish" på "GWAB.Azure"-prosjektet, opprett ny cloud service (bruk samme navn som du hadde) og klikk på "Publish"-knappen. 
 
@@ -378,8 +342,6 @@ Nå som elasticsearch-teamet har lagd en Azure-plugin er det enkelt å komme iga
 
 Følg beskrivelsen for å opprette en java keystore nøkkel:
 
-```
-
 	openssl x509 -outform der -in azure-certificate.pem -out azure-certificate.cer
 	
 	openssl pkcs8 -topk8 -nocrypt -in azure-private.key -inform PEM -out azure-pk.pem -outform PEM
@@ -392,16 +354,12 @@ Følg beskrivelsen for å opprette en java keystore nøkkel:
 	
 	# Bruk passord: Nnug2014!
 
-```
-
 Kopier ut `azurekeystore.pkcs12` fra mappen til `openssl.exe` til `C:\certs`.
 
 
 ### Opprett VM
 
 Så kan vi opprette vår Azure VM basert på image `b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-13_10-amd64-server-20130808-alpha3-en-us-30GB`:
-
-```
 		
 	# Deploy an Ubuntu image on an extra small instance in West Europe:
 	azure vm create azure-elasticsearch-cluster \
@@ -422,7 +380,6 @@ Så kan vi opprette vår Azure VM basert på image `b39f27a8b8c64d52b05eac6a62eb
 	
 	# elasticsearch / Password1234#!! are the SSH login/password for this instance.
 
-```
 
 Nå opprettes vår virtuelle maskin i Azure. La det går 2-4 minutter før du går videre til neste steg. Du kan følge framdriften i Azure-portalen under "Virtual machines".
 
@@ -455,71 +412,44 @@ Vi må kopiere vår java keystore-fil `azurekeystore.pkcs12` fra `C:\certs` over
 
 Åpne nytt kommandovindu på din maskin og finn `pscp.exe`, og kjør følgende kommando:
 
-```
-
 	# Kopier java keystore-fil fra C:\certs\ til /home/elasticsearch
-	pscp -i "C:\certs\azurekeystore.pkcs12" elasticsearch@azure-elasticsearch-cluster.cloudapp.net:/home/elasticsearch				
-
-```
+	pscp -i "C:\certs\azurekeystore.pkcs12" elasticsearch@azure-elasticsearch-cluster.cloudapp.net:/home/elasticsearch
 
 *Velg 'Y' hvis du får spørsmål om å lagre host key i cache.*
 
 
 Nå skal filen `azurekeystore.pkcs12` være overført til mappen `/home/elasticsearch`. Verifiser dette ved å kjøre: 
 
-```
-
 	# Hent filer i home-mappen til elasticsearch
 	ls /home/elasticsearch
-
-```
 
 ### Installer elasticsearch
 
 Siden elasticsearch trenger Java for å kjøre må vi installere Java JRE 7 på vår VM med OpenJDK7. Kjør følgende kommandoer:
-
-```
 
 	# Oppdater alle pakker først
 	sudo apt-get update
 
 	# Installer Java
 	sudo apt-get install openjdk-7-jre-headless
-		
-		
-```
 
 *Velg 'Y' hvis du blir spurt om diskplassbruk under installasjonen.*
 
 Verifiser at Java er blitt installert ved å kjøre:
 
-	
-```
-	
 	java -version
-	
-```
 
 Da har vi installert Java og vi klare for å installere elasticsearch på vår Ubuntu VM. Vi bruker Putty og kjører følgende kommandoer:
-
-
-
-```	
 
 	# Last ned elasticsearch for Debian
 	curl -s https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.0.0.deb -o elasticsearch-1.0.0.deb
 	
 	# Pakk ut og installer
 	sudo dpkg -i elasticsearch-1.0.0.deb
-			
-
-```
 
 #### Installer og konfigurer Azure-plugin for elasticsearch
 
 Bruk Putty og kjør følgende kommandoer:
-
-```
 
 	# Stopp elasticsearch
 	sudo service elasticsearch stop
@@ -530,11 +460,7 @@ Bruk Putty og kjør følgende kommandoer:
 	# Legg inn konfigurasjonsverdier med vi/vim
 	sudo vi /etc/elasticsearch/elasticsearch.yml
 
-```
-
 Legg inn følgende linjer nederst i .yml-filen:
-
-```
 
 	cloud:
 	        azure:
@@ -547,11 +473,8 @@ Legg inn følgende linjer nederst i .yml-filen:
 
 	# Slå av replica shards for nå
 	index.number_of_replicas: 0
-```
 
 Eksempel på ferdig konfigurasjon:
-
-```
 
 	cloud:
 	    azure:
@@ -564,15 +487,10 @@ Eksempel på ferdig konfigurasjon:
 
 	# Slå av replica shards for nå
 	index.number_of_replicas: 0
-```
 
 Start elasticsearch:
 
-```
-
 	sudo service elasticsearch start
-
-```
 
 Skulle en feil oppstå underveis, eller senere i forbindelse med utvikling og testing, så kan du finne loggfilen til elasticsearch i mappen `/var/log/elasticsearch`.
 
@@ -596,24 +514,14 @@ og lagre. Gå til [http://azure-elasticsearch-cluster.cloudapp.net/](http://azur
 
 Det er spesielt to plugins til elasticsearch som gir oversikt over noder, indekser, aliaser m.m. Dette er **Head** og **BigDesk**, og kjør følgende kommandoer i Putty-kommendovinduet for å installere disse:
 
-```
-
 	# Installer plugins Head og BigDesk
 	sudo /usr/share/elasticsearch/bin/plugin -install mobz/elasticsearch-head
 	
 	sudo /usr/share/elasticsearch/bin/plugin -install lukas-vlcek/bigdesk
-		
-
-```
-
 
 Restart elasticsearch:
 
-```
-
 	sudo service elasticsearch restart
-
-```
 
 elasticsearch-head er nå klar på [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/) og bigdesk på [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/bigdesk/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/bigdesk/).
 
@@ -623,9 +531,6 @@ elasticsearch-head er nå klar på [http://azure-elasticsearch-cluster.cloudapp.
 Nå som vi har en elasticsearch på en VM kan det være nyttig å kunne skalere ut for å ta imot større pågang. Dette kan skriptes med Azure command-line tool. Vi skalerer ut vår VM til 10 instanser ved å slå av vår VM, fange et image av VM'en, og så opprette 10 stk VM'er basert på dette imaget. 
 
 Her er en beskrivelse av kommandoene du kan kjøre:
-
-
-```
 
 	# Slå av VM
 	azure vm shutdown myesnode1
@@ -647,8 +552,6 @@ Her er en beskrivelse av kommandoene du kan kjøre:
 	                        elasticsearch Password1234#!!
 	    done
 
-```
-
 Vent 2-4 minutter og så gå til http://azure-elasticsearch-cluster.cloudapp.net/. Verifiser at du får opp systeminformasjon om elasticsearch-clusteret. Så gå til [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/) (hvis du installerte Head-plugin til elasticsearch) og verifiser at du ser 10 noder.
 
 
@@ -659,8 +562,6 @@ For å indeksere data inn i elasticsearch brukes "data rivers". Dette er java-pr
 I denne oppgaven følger vi [denne guiden](http://www.pilato.fr/rssriver/) for å sette opp en enkel rss-river til å konsumere en [rss-feed](http://www.vg.no/rss/create.php?categories=12,21,20,34,10,164,22,25&keywords=&limit=20) levert av vg.no.
 
 I Putty-kommandolinje kjør følgende:
-
-```
 
 	cd /usr/share/elasticsearch
 
@@ -689,8 +590,6 @@ I Putty-kommandolinje kjør følgende:
 	    ]
 	  }
 	}'
-
-```
 
 Nå har du opprettet en ny index **newspapers** og en ny mapping **page** for alle *documents* som skal indekseres hit. Riveren vil putte hvert rss-objekt inn som et nytt *document* i denne indexen. 
 
