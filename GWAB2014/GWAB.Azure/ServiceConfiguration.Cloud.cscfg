@@ -14,4 +14,14 @@
       <Certificate name="Microsoft.WindowsAzure.Plugins.RemoteAccess.PasswordEncryption" thumbprint="1C209D58BCE5A9DD345E4E77F0420F23371867CB" thumbprintAlgorithm="sha1" />
     </Certificates>
   </Role>
+  <NetworkConfiguration>
+    <VirtualNetworkSite name="gwab2014-we-vnet" />
+    <AddressAssignments>
+      <InstanceAddress roleName="GWAB.Web">
+        <Subnets>
+          <Subnet name="DEV" />
+        </Subnets>
+      </InstanceAddress>
+    </AddressAssignments>
+  </NetworkConfiguration>
 </ServiceConfiguration>

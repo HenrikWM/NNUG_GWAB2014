@@ -28,7 +28,7 @@ Hvis du skal følge fasiten så bør du:
 Denne guiden er tatt fra [elasticsearch sin egne sider](http://www.elasticsearch.org/blog/azure-cloud-plugin-for-elasticsearch/) for deres [Azure-plugin](https://github.com/elasticsearch/elasticsearch-cloud-azure), men er tilpasset for en utvikler på en Windows PC da guiden forutsetter at man sitter med en Linux-maskin og bruker Linux-kommandoer som *cat*, *ssh* m.fl.
 
 
-1. Oppretting av SSH-nøkler
+1. Opprett SSH-nøkler
 ------------------------
 
 For å komme igang med Azure trenger vi å lage et sertifikat. Dette sertifikatet med tilhørende privat nøkkel får vi bruk for når vi skal deploye til Azure og koble til vår elasticsearch-VM senere. Veiledningen under er basert på dokumentasjon fra windowsazure.com på [SSH-nøkkelgenerering](http://www.windowsazure.com/en-us/documentation/articles/linux-use-ssh-key/#create-a-private-key-on-windows) til bruk i Azure.
@@ -49,7 +49,7 @@ Her er en beskrivelse av hvordan du oppretter disse ved å bruke `openssl.exe`:
 Verifiser at du finner `azure-private.key`, `azure-certificate.pem`, `azure-certificate.cer` i samme mappe som `openssl.exe`. Kopier disse over til `C:\certs` for senere bruk. 
 
 
-2. Oppretting av Azure Cloud Service
+2. Opprett Windows Azure Cloud Service
 ------------------------------------
 
 Du skal nå opprette en **Azure Cloud Service** og en **web role**. 
@@ -83,7 +83,7 @@ Du har nå opprettet en Cloud Service med en ASP.Net MVC web role. Du kan nå de
 Din Azure Cloud Service blir nå deployet til Azure. Du kan følge statusen i Azure-portalen på Cloud Services > GWAB2014. Når deploy er utført kan du prøve å aksessere nettsiden ved å gå til [gwab2014.cloudapp.net](http://gwab2014.cloudapp.net).
 
 
-### Koble til GWAB-elasticsearch
+### Koble til elasticsearch
 
 Det er allerede satt opp en elasticsearch-instans i Azure og du skal nå koble til denne slik at nettportalen kan utføre spørringer og få søketreff tilbake. Vi bruker da NEST som er en C#-klient for elasticsearch.
 
@@ -91,9 +91,284 @@ Det er allerede satt opp en elasticsearch-instans i Azure og du skal nå koble t
 
 Velg Webrole1 som Default project og installer NEST ved å kjøre følgende kommando i Package Manager Console i Visual Studio:
 
+```
+
     PM> Install-Package NEST
+```
 
- 
+#### Legg inn kode for søk
+
+##### index.cshtml
+
+Lim inn følgende kode i `\webrole1.web\views\home\index.cshtml` etter linje 12:
+
+```
+
+	<div class="row">
+	    <div class="col-md-12">
+	        @{
+	            using (Html.BeginForm("search", "Home"))
+	            {
+	                <p>@Html.TextBoxFor(m => m.QueryString, new { @class = "form-control", placeholder = "Search for news from vg.no..." })</p>
+	                <p><input type="submit" value="Search" class="btn btn-primary btn-large" /></p>
+	            }
+	        }
+	    </div>
+	</div>
+
+
+```
+
+og lim inn øverst i filen:
+
+```
+
+	@model GWAB.Web.Models.HomeModel
+``` 
+
+##### HomeModel
+
+I mappen `\webrole1.web\Models` opprett en ny modellklasse for Home:
+
+``` 
+
+	using System.ComponentModel.DataAnnotations;
+
+	namespace GWAB.Web.Models
+	{
+	    public class HomeModel
+	    {
+	        [Display(Name = "Search for news:")]
+	        public string QueryString { get; set; }
+	
+	        public HomeModel()
+	        {
+	            QueryString = string.Empty;
+	        }
+	    }
+	}
+
+``` 
+
+I samme mappe opprett en ny modellklasse for søketreff:
+
+``` 
+
+	using System.Collections.Generic;
+
+	namespace GWAB.Web.Models
+	{
+	    public class SearchResultsModel
+	    {
+	        public ICollection<RssItem> Items { get; set; }
+	
+	        public SearchResultsModel()
+	        {
+	            Items = new List<RssItem>();
+	        }
+	    }
+	}
+
+``` 
+
+I samme mappe opprett en ny modellklasse for rss-nyhetene som NEST skal mappe fra vår "page"-mapping i elasticsearch til C#. Merk at det brukes `DataMember` og `Name` for å mappe direkte mellom felter i "page"-mappingen og feltene i `RssItem`-klassen.
+
+``` 
+
+	using System.Runtime.Serialization;
+	
+	namespace GWAB.Web.Models
+	{
+	    [DataContract]
+	    public class RssItem
+	    {
+	        [DataMember(Name = "title")]
+	        public string Title { get; set; }
+	
+	        [DataMember(Name = "description")]
+	        public string Description { get; set; }
+	
+	        [DataMember(Name = "author")]
+	        public string Author { get; set; }
+	
+	        [DataMember(Name = "link")]
+	        public string Link { get; set; }
+	
+	        public RssItem()
+	        {
+	            Title = string.Empty;
+	            Description = string.Empty;
+	            Author = string.Empty;
+	            Link = string.Empty;
+	        }
+	    }
+	}
+
+``` 
+
+##### SearchResult.cshtml
+
+Opprett viewet `SearchResults.cshtml` under `\webrole1.web\views\home` og lim inn følgende kode:
+
+``` 
+
+	@model GWAB.Web.Models.SearchResultsModel
+
+	@{
+	    ViewBag.Title = "Search results";
+	}
+	
+	<h2>Search results</h2>
+	<h3>Your search returned @Model.Items.Count hit(s):</h3>
+	
+	<hr/>
+	
+	<div id="searchresults">
+	    @foreach (var item in Model.Items)
+	    {
+	        <h4><a href="@item.Link" title="@item.Title">@item.Title</a></h4>
+	        <p>@item.Description</p>
+	    }
+	</div>
+
+``` 
+
+##### HomeController.cs
+
+Lim inn kode i konstruktøren HomeController() for å koble NEST til vår elasticsearch i Windows Azure:
+
+
+``` 
+
+	const string elasticsearchEndpoint = "http://gwab2014-elasticsearch-cluster.cloudapp.net";
+
+    var uri = new Uri(elasticsearchEndpoint);
+
+    var settings = new ConnectionSettings(uri)
+        .SetDefaultIndex("newspapers") // index: newspapers
+        .MapDefaultTypeNames(i => i.Add(typeof(RssItem), "page")) // mapping: page
+        .EnableTrace(); // gir oss json-output fra NEST til Output-vinduet i Visual Studio
+
+    _searchClient = new ElasticClient(settings);
+
+``` 
+
+Opprett ny privat klassevariabel `_searchClient` øverst i `HomeController`-klassen:
+
+
+``` 
+
+	private readonly ElasticClient _searchClient;
+
+
+``` 
+
+Lim inn følgende kode for ny action som tar imot søkestrengen, setter søketreffene fra NEST til `Items`-listen i `SearchResultsModel`, og returnerer viewet `SearchResults` med modellen:
+
+``` 
+
+	public ActionResult Search(string querystring)
+    {
+        var model = new SearchResultsModel();
+
+        if (string.IsNullOrEmpty(querystring) == false)
+        {
+            var results = _searchClient.Search<RssItem>(s => s
+                    .From(0)
+                    .Size(100)
+                    .Query(q => q.QueryString(qs => qs.OnFields(f => f.Description).Query("Cantona")))
+            );
+
+            model.Items = results.Documents.ToList();
+        }
+
+        return View("SearchResults", model);
+    }
+
+
+``` 
+
+Test endringene lokalt i Azure-emulatoren ved å merke prosjektet **GWAB.Azure** som "Startup Project" og trykk F5. Søk etter nyheter fra vg.no i søkeboksen og se om det kommer treff. Ha gjerne på breakpoints i "Search"-action så du kan se på spørringene som blir utført av NEST. For innblikk i hva som er indeksert i elasticsearch på *gwab2014-elasticsearch-cluster.cloudapp.net*, gå til [http://gwab2014-elasticsearch-cluster.cloudapp.net/_plugin/head/](http://gwab2014-elasticsearch-cluster.cloudapp.net/_plugin/head/) for å se på dataene.
+
+Deploy applikasjonen ut til Azure og test at søke virker ute på Azure.
+
+
+3. Opprett et Windows Azure Virtual Network
+-------------------------------------------
+
+Nå har du en cloud service med en web role og et fungerende søk mot elasticsearch. Enn så lenge ligger dette i Azure som en cloud service og isolert. Et mer reelt scenario er at man har flere miljø, typisk utvikling (DEV), staging, produksjon osv. og da bør alle disse instansene samles for å ha kontroll og enklere tilgang.
+
+La oss putte dette inn i et **Virtual Network** slik at du kan plassere instanser og tjenester innenfor et lukket nettverk. Å ha ressurser i et lukket nettverk gir mange fordeler, som f.eks. å teste løsningen uten å åpne et *Endpoint* mot omverdnen, få tilgang til lokale disker på instansene og å bruke Remote Desktop inn på instansene uten å måtte gå via *Azure Management Portal*.
+
+
+### Opprett Virtual Network
+
+1. Gå til Azure Management Portal > Networks > og klikk på "Create a virtual network.
+2. Oppgi følgende:
+	1. Name: gwab2014-we-vnet
+	2. Region: West-Europe
+	3. Affinity Group: Create new
+	4. Affinity Group Name: gwab2014	
+	5. Gå til neste side
+3. Hopp over DNS-Servers og Site-to-Site/Point-to-Site Connectivity og gå til neste side
+4. Vi ønsker å plassere våre ressurser i et 10.0.1.0/24 adresseområde for vårt utviklingsmiljø i Azure (DEV), oppgi følgende:
+	1. Starting IP: 10.0.1.0
+	2. CIDIR: /24 (256)
+	3. Address Space skal nå være 10.0.1.0/24.
+	4. Subnets:
+		1. Name: DEV
+		2. Starting IP: 10.0.1.0 
+		3. CIDIR: /24 (256)
+	5. Bekreft at Usable Address Space er 10.0.1.0 - 10.0.1.255. Dette gir oss 255 ledige adresser for vårt DEV-miljø.
+5. Klikk på Complete-knappen og vent i ca. 5 min mens nettverket blir opprettet.
+
+
+### Legg inn webrole1 i nettverket
+
+Du har nå et virtuelt nettverk i Azure. Neste skritt er å melde inn din web role inn i nettverket.
+
+Åpne filen `ServiceConfiguration.Cloud.cscfg` og lim inn under `</Role>`:
+
+```
+
+	<NetworkConfiguration>
+	    <VirtualNetworkSite name="gwab2014-we-vnet" />
+	    <AddressAssignments>
+	      <InstanceAddress roleName="webrole1">
+	        <Subnets>
+	          <Subnet name="DEV" />
+	        </Subnets>
+	      </InstanceAddress>	      
+	    </AddressAssignments>
+	</NetworkConfiguration>
+
+```
+
+Gå til Azure Management Portal og slett cloud servicen (kan ikke legge til ressurser i et nettverk når man foretar update/upgrade på en cloud service). Velg "Publish" på "GWAB.Azure"-prosjektet, opprett ny cloud service (bruk samme navn som du hadde) og klikk på "Publish"-knappen. 
+
+Følg med på dashbordet til det virtuelle nettverket i Azure-portalen. Når løsningen er deployet skal du se din web role instans dukke opp under "resources" med angitt ip-adresse fra subnettet "DEV".
+
+
+### Opprett Point-to-Site VPN
+
+Siste steg er å opprette en VPN-tunnell inn til nettverket slik at man kan komme inn i nettverket utenfor Azure.
+
+1. Gå til Azure Management Portal > Network > Configure (arkfane).
+2. Under point-to-site connectivity huk av for "Configure Point-to-site connectivity".
+3. Klikk på "Add address space"-knappen under DEV-subnettet.
+4. Oppgi følgende for VPN- og Gateway-subnettene:
+	1. Starting IP: 10.0.9.0
+	2. CIDIR: /24 (251)
+	3. Sjekk at Address Space er 10.0.9.0/27 og Usable Address Range er 10.0.9.4 - 10.0.9.254. Dette gir oss 30 ledige adresser for VPN-klienter og Gateway. 
+	4. Lag subnett VPN:
+		1. Starting IP: 10.0.9.0
+		2. CIDIR: /25 (123)
+		3. Usable Address Range skal være 10.0.9.4 - 10.0.9.126
+	5. Lag subnett Gateway:
+		1. Starting IP: 10.0.9.128
+		2. CIDIR: /29 (3)
+		3. Usable Address Range skal være 10.0.9.132 - 10.0.9.134 
+	6. Klikk på Save nederst på siden og velg Yes.
 
 
 
@@ -101,21 +376,7 @@ Velg Webrole1 som Default project og installer NEST ved å kjøre følgende komm
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Oppretting av en Azure VM med elasticsearch
+4. Opprett en Windows Azure Virtual Machine med elasticsearch
 -------------------------------------------
 
 Nå som elasticsearch-teamet har lagd en Azure-plugin er det enkelt å komme igang med en elasticsearch i Azure. Denne beskrivelsen vil vise hvordan vi bruker Azure command-line tool til å opprette en VM basert på et Debian-image, og så bruker vi SSH for å koble til og installere java, elasticsearch og et par nyttige plugins.
@@ -173,7 +434,7 @@ Så kan vi opprette vår Azure VM basert på image `b39f27a8b8c64d52b05eac6a62eb
 Nå opprettes vår virtuelle maskin i Azure. La det går 2-4 minutter før du går videre til neste steg. Du kan følge framdriften i Azure-portalen under "Virtual machines".
 
 
-### Installere elasticsearch
+### Installer og konfigurer elasticsearch
 
 Vi kobler opp til vår VM via SSH og bruker Putty til dette. Putty trenger en ppk-fil som er vår private nøkkel så da bruker vi Puttygen til å generere ppk-filen.
 
@@ -193,6 +454,7 @@ Oppgi følgende innstillinger i Putty:
 **Viktig**: Får du feilmeldingen "Host does not exist" i Putty så bruk IP-adressen til VM'ens Cloud Service
 
 Putty starter SSH-sesjonen i kommandovindu. Oppgi så brukernavnet "elasticsearch". Du blir nå autentisert med din private nøkkel og er kommet inn på VM'en.
+
 
 #### Kopiere over java keystore fil med Putty
 
@@ -337,7 +599,7 @@ og lagre. Gå til [http://azure-elasticsearch-cluster.cloudapp.net/](http://azur
 		
 ### Valgfrie oppgaver
 
-#### Installer plugins til elasticsearch
+#### Installer plugins til elasticsearch på din VM
 
 Det er spesielt to plugins til elasticsearch som gir oversikt over noder, indekser, aliaser m.m. Dette er **Head** og **BigDesk**, og kjør følgende kommandoer i Putty-kommendovinduet for å installere disse:
 
@@ -363,7 +625,7 @@ Restart elasticsearch:
 elasticsearch-head er nå klar på [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/) og bigdesk på [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/bigdesk/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/bigdesk/).
 
 
-#### Skalering av elasticsearch 
+#### Skalering av din elasticsearch-VM
 
 Nå som vi har en elasticsearch på en VM kan det være nyttig å kunne skalere ut for å ta imot større pågang. Dette kan skriptes med Azure command-line tool. Vi skalerer ut vår VM til 10 instanser ved å slå av vår VM, fange et image av VM'en, og så opprette 10 stk VM'er basert på dette imaget. 
 
@@ -397,7 +659,7 @@ Her er en beskrivelse av kommandoene du kan kjøre:
 Vent 2-4 minutter og så gå til http://azure-elasticsearch-cluster.cloudapp.net/. Verifiser at du får opp systeminformasjon om elasticsearch-clusteret. Så gå til [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/) (hvis du installerte Head-plugin til elasticsearch) og verifiser at du ser 10 noder.
 
 
-#### Indekser data med RSS-rivers
+#### Indekser data til din elasticsearch med RSS-rivers
 
 For å indeksere data inn i elasticsearch brukes "data rivers". Dette er java-programmer som mater data inn i elasticsearch via REST-kall til gitte tider. Det finnes mange ulike varianter (xml, rss, json m.m.) å velge blant og med litt Java-kunnskap kan man lage egne.
 

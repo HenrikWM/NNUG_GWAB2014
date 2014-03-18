@@ -1,0 +1,18 @@
+﻿@model GWAB.Web.Models.SearchResultsModel
+
+@{
+    ViewBag.Title = "Search results";
+}
+
+<h2>Search results</h2>
+<h3>Your search returned @Model.Items.Count hit(s):</h3>
+
+<hr/>
+
+<div id="searchresults">
+    @foreach (var item in Model.Items)
+    {
+        <h4><a href="@item.Link" title="@item.Title">@item.Title</a></h4>
+        <p>@item.Description</p>
+    }
+</div>

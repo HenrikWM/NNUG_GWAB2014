@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Linq;
 using System.Web.Mvc;
-using System.Web.UI.WebControls;
 using GWAB.Web.Models;
 using Nest;
 
@@ -8,10 +8,12 @@ namespace GWAB.Web.Controllers
 {
     public class HomeController : Controller
     {
+        private readonly ElasticClient _searchClient;
+
         public HomeController()
         {
             const string elasticsearchEndpoint = "http://gwab2014-elasticsearch-cluster.cloudapp.net";
-            
+
             var uri = new Uri(elasticsearchEndpoint);
 
             var settings = new ConnectionSettings(uri)
@@ -19,15 +21,7 @@ namespace GWAB.Web.Controllers
                 .MapDefaultTypeNames(i => i.Add(typeof(RssItem), "page"))
                 .EnableTrace();
 
-            var client = new ElasticClient(settings);
-
-            var results = client.Search<RssItem>(s => s
-                    .From(0)
-                    .Size(10)
-                    .Query(q => q.QueryString(qs => qs.OnFields(f => f.Description).Query("Cantona")))
-            );
-
-            var dataItems = results.Documents;
+            _searchClient = new ElasticClient(settings);
         }
 
         public ActionResult Index()
@@ -47,6 +41,24 @@ namespace GWAB.Web.Controllers
             ViewBag.Message = "Your contact page.";
 
             return View();
+        }
+
+        public ActionResult Search(string querystring)
+        {
+            var model = new SearchResultsModel();
+
+            if (string.IsNullOrEmpty(querystring) == false)
+            {
+                var results = _searchClient.Search<RssItem>(s => s
+                        .From(0)
+                        .Size(100)
+                        .Query(q => q.QueryString(qs => qs.OnFields(f => f.Title, f => f.Description).Query(querystring)))
+                );
+
+                model.Items = results.Documents.ToList();
+            }
+
+            return View("SearchResults", model);
         }
     }
 }
