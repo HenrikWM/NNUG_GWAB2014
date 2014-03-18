@@ -91,10 +91,8 @@ Det er allerede satt opp en elasticsearch-instans i Azure og du skal nå koble t
 
 Velg Webrole1 som Default project og installer NEST ved å kjøre følgende kommando i Package Manager Console i Visual Studio:
 
-```
-
     PM> Install-Package NEST
-```
+
 
 #### Legg inn kode for søk
 
@@ -102,7 +100,6 @@ Velg Webrole1 som Default project og installer NEST ved å kjøre følgende komm
 
 Lim inn følgende kode i `\webrole1.web\views\home\index.cshtml` etter linje 12:
 
-```
 
 	<div class="row">
 	    <div class="col-md-12">
@@ -116,13 +113,9 @@ Lim inn følgende kode i `\webrole1.web\views\home\index.cshtml` etter linje 12:
 	    </div>
 	</div>
 
-
-```
-
 og lim inn øverst i filen:
 
 ```
-
 	@model GWAB.Web.Models.HomeModel
 ``` 
 
