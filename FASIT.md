@@ -35,16 +35,11 @@ For å komme igang med Azure trenger vi å lage et sertifikat. Dette sertifikate
 
 Her er en beskrivelse av hvordan du oppretter disse ved å bruke `openssl.exe`:
 
-```
-
 	# Opprett privat nøkkel og pem-fil
     openssl.exe req -x509 -nodes -days 365 -newkey rsa:2048 -keyout azure-private.key -out azure-certificate.pem			
 
 	# Opprett sertifikat
 	openssl.exe  x509 -outform der -in azure-certificate.pem -out azure-certificate.cer
-
-
-```
 
 Verifiser at du finner `azure-private.key`, `azure-certificate.pem`, `azure-certificate.cer` i samme mappe som `openssl.exe`. Kopier disse over til `C:\certs` for senere bruk. 
 
@@ -100,7 +95,6 @@ Velg Webrole1 som Default project og installer NEST ved å kjøre følgende komm
 
 Lim inn følgende kode i `\webrole1.web\views\home\index.cshtml` etter linje 12:
 
-
 	<div class="row">
 	    <div class="col-md-12">
 	        @{
@@ -115,9 +109,7 @@ Lim inn følgende kode i `\webrole1.web\views\home\index.cshtml` etter linje 12:
 
 og lim inn øverst i filen:
 
-```
 	@model GWAB.Web.Models.HomeModel
-``` 
 
 ##### HomeModel
 
