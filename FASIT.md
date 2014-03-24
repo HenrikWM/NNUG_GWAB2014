@@ -1,99 +1,75 @@
 NNUG - Global Windows Azure Bootcamp 2014
 =========================================
 
-Denne fasiten viser hvordan man oppgaver som ble gitt på NNUGs Global Windows Azure Bootcamp 2014 hos Bouvet 29. mars.
+This is a step-by-step workshop assignment that was given during NNUG's Global Windows Azure Bootcamp 2014 @ Bouvet on 29. March 2014. 
 
 
-Hva fasiten dekker
---------------------------
+Contents
+--------
 
-* Oppretting av nødvendige SSH-nøkler til bruk i **Azure**
-* Oppretting og deploying en **Azure Cloud Service** med en **web role**
-* Oppretting av et **Azure Virtual Network** og plassere vår **web role** inn i dette nettverket
-* Oppretting og konfigurasjon av **Point-to-Site VPN** mot et **Azure Virtual Network**
-* Oppretting av en **Azure VM** med **elasticsearch** på Debian
-
-
-### Før du begynner
-
-Hvis du skal følge fasiten så bør du:
-
-* Ha med egen pc med VS 2012/2013
-* Ha installert siste versjon av Azure SDK
-* Ha installert [Azure command-line tool](http://www.windowsazure.com/en-us/develop/nodejs/how-to-guides/command-line-tools/)
-* Ha installert [OpenSSL for Windows](http://downloads.sourceforge.net/gnuwin32/openssl-0.9.8h-1-bin.zip) 
-* Lastet ned [PuttyGen](http://the.earth.li/~sgtatham/putty/latest/x86/puttygen.exe), [Putty](http://the.earth.li/~sgtatham/putty/latest/x86/putty.exe) og [PSCP](http://the.earth.li/~sgtatham/putty/latest/x86/pscp.exe) 
-* Ha konto til [Azure-portalen](http://www.windowsazure.com/)
-
-Denne guiden er tatt fra [elasticsearch sin egne sider](http://www.elasticsearch.org/blog/azure-cloud-plugin-for-elasticsearch/) for deres [Azure-plugin](https://github.com/elasticsearch/elasticsearch-cloud-azure), men er tilpasset for en utvikler på en Windows PC da guiden forutsetter at man sitter med en Linux-maskin og bruker Linux-kommandoer som *cat*, *ssh* m.fl.
+* *Create* and *deploy* a **Azure Cloud Service** containing a **web role**
+* *Create* a **Azure Virtual Network** and invite the **web role** into the network
+* *Create* and *configure* **Point-to-Site VPN** to access the  **Azure Virtual Network**
+* *Create* an **Azure Virtual Machine** with Debian running an instance of **elasticsearch**
 
 
-1. Opprett SSH-nøkler
-------------------------
+### Before you begin
 
-For å komme igang med Azure trenger vi å lage et sertifikat. Dette sertifikatet med tilhørende privat nøkkel får vi bruk for når vi skal deploye til Azure og koble til vår elasticsearch-VM senere. Veiledningen under er basert på dokumentasjon fra windowsazure.com på [SSH-nøkkelgenerering](http://www.windowsazure.com/en-us/documentation/articles/linux-use-ssh-key/#create-a-private-key-on-windows) til bruk i Azure.
+If you are going to follow all of the steps in this assignment, then make sure you have all of the prerequisites:
 
-Her er en beskrivelse av hvordan du oppretter disse ved å bruke `openssl.exe`:
+* Have a PC with Visual Studio 2012/2013
+* Have installed the latest version of Azure SDK
+* Have installed the [Azure command-line tool](http://www.windowsazure.com/en-us/develop/nodejs/how-to-guides/command-line-tools/)
+* Have installed [OpenSSL for Windows](http://code.google.com/p/openssl-for-windows/downloads/detail?name=openssl-0.9.8k_WIN32.zip&can=2&q=) 
+* Have downloaded [PuttyGen](http://the.earth.li/~sgtatham/putty/latest/x86/puttygen.exe), [Putty](http://the.earth.li/~sgtatham/putty/latest/x86/putty.exe) og [PSCP](http://the.earth.li/~sgtatham/putty/latest/x86/pscp.exe) 
+* Have an account for the [Azure-portal](http://www.windowsazure.com/)
 
-	# Opprett privat nøkkel og pem-fil
-    openssl.exe req -x509 -nodes -days 365 -newkey rsa:2048 -keyout azure-private.key -out azure-certificate.pem			
+### About this assignment
 
-	# Opprett sertifikat
-	openssl.exe  x509 -outform der -in azure-certificate.pem -out azure-certificate.cer
-
-Verifiser at du finner `azure-private.key`, `azure-certificate.pem`, `azure-certificate.cer` i samme mappe som `openssl.exe`. Kopier disse over til `C:\certs` for senere bruk. 
+This assignment is partially based on a guide at [elasticsearch's website](http://www.elasticsearch.org/blog/azure-cloud-plugin-for-elasticsearch/) for their [Azure-plugin for node discovery](https://github.com/elasticsearch/elasticsearch-cloud-azure). We have adapted this for a developer using a PC instead of a Linux-box, and have introduced a few more tasks as well. 
 
 
-2. Opprett Windows Azure Cloud Service
-------------------------------------
+Assignment #1: Create a Windows Azure Cloud Service
+---------------------------------------------------
 
-Du skal nå opprette en **Azure Cloud Service** og en **web role**. 
+In this assignment you will create a **Azure Cloud Service** and a **web role**. This website will access an elasticsearch cluster already set-up in Azure and will return search results for news articles from vg.no. 
 
-### Installer og last opp sertifikat
+### Create the Cloud Service with a web role
 
-Finn `azure-certificate.cer` og dobbelklikk på filen og velg "Install certificate" for å installere denne på maskinen din. Last deretter opp `azure-certificate.cer` i Azure-portalen:
-
-1. Gå til Azure-portalen og velg Settings > Management certificates. 
-2. Klikk på Upload-knappen nederst på siden og velg `azure-certificate.cer` i `C:\certs`.
-
-Du har nå lastet opp sertifikatet som gjør at deploy og autentisering kan utføres.
-
-### Opprett Cloud Service med web role
-
-1. Åpne Visual Studio og velg File > New project. Velg malen Visual C# > Cloud > Windows Azure Cloud Service:
+1. Open Visual Studio and choose File > New project. Choose the Visual C# template > Cloud > Windows Azure Cloud Service:
  - Name: GWAB.Azure
  - Solution: GWAB
- - Klikk Ok.
-2. Velg ASP.NET Web Role og klikk på pil til høyre for å legge den inn i vår Cloud Service. Klikk Ok.
-3. Velg malen MVC og klikk på "Change Authentication" og velg "No Authentication". Klikk Ok.
+ - Click Ok.
+2. Choose ASP.NET Web Role and click on the right-arrow to add it into our Cloud Service. Click Ok.
+3. Choose the template "MVC" and click on "Change Authentication" and select "No Authentication". Click Ok.
 
-Du har nå opprettet en Cloud Service med en ASP.Net MVC web role. Du kan nå deploye din nettside til Azure:
+You have now created a Cloud Service with a ASP.net MVC web role. You can now deploy your solution and website to Azure:
 
-1. Høyreklikk på GWAB.Azure-prosjektet og velg "Publish".
-2. Logg inn med ditt Azure-abonnement og velg ditt abonnement i abonnementlisten og klikk på Next.
-3. Opprett en ny Cloud Service ved å gå til "Cloud Service:" og velg "Create New" fra nedtrekksmenyen. Oppgi navnet "GWAB2014" eller tilsvarende og velg lokasjon "West Europe".
-4. Du kan aktivere Remote Desktop hvis ønskelig. Husk å velg sertifikatet `azure-certificate.cer` i `C:\certs`. 
-5. Velg Next og deretter Publish på neste side.
+1. Right-click on GWAB.Azure-project and choose "Publish".
+2. Log in with your Azure-credentials and select you subscription in the list and click Next.
+3. Create a new Cloud Service by going to "Cloud Service:" and select "Create New" from the dropdow-menu. Specify "GWAB2014" or equivalent as a name and select location "West Europe". 
+4. Click Next and then Publish on the next page.
 
-Din Azure Cloud Service blir nå deployet til Azure. Du kan følge statusen i Azure-portalen på Cloud Services > GWAB2014. Når deploy er utført kan du prøve å aksessere nettsiden ved å gå til [gwab2014.cloudapp.net](http://gwab2014.cloudapp.net).
+Your Azure Cloud Service is now being deployed to Azure. To see the deployment in action, go to the Azure-portalen and then to Cloud Services > GWAB2014. When the deploy is complete you can try to access the website by navigating with a browser to [gwab2014.cloudapp.net](http://gwab2014.cloudapp.net).
 
 
-### Koble til elasticsearch
+### Connect to elasticsearch
 
-Det er allerede satt opp en elasticsearch-instans i Azure og du skal nå koble til denne slik at nettportalen kan utføre spørringer og få søketreff tilbake. Vi bruker da NEST som er en C#-klient for elasticsearch.
+There's an instance of elasticsearch set up for this workshop in Azure. The web role will be configured to post queries to this search cluster and get results back and show them on a search-results page. We will use NEST as a strongly-typed C#-client for elasticsearch.
 
-#### Installer NEST med NuGet
 
-Velg Webrole1 som Default project og installer NEST ved å kjøre følgende kommando i Package Manager Console i Visual Studio:
+#### Install NEST with NuGet
+
+Set Webrole1 as "Default project" and install NEST by running the following command in the Package Manager Console in Visual Studio:
 
     PM> Install-Package NEST
 
 
-#### Legg inn kode for søk
+#### Add code for search
 
 ##### index.cshtml
 
-Lim inn følgende kode i `\webrole1.web\views\home\index.cshtml` etter linje 12:
+Paste the following code into `\webrole1.web\views\home\index.cshtml` after line 12:
 
 	<div class="row">
 	    <div class="col-md-12">
@@ -107,13 +83,13 @@ Lim inn følgende kode i `\webrole1.web\views\home\index.cshtml` etter linje 12:
 	    </div>
 	</div>
 
-og lim inn øverst i filen:
+and paste in at the very top of the file:
 
 	@model GWAB.Web.Models.HomeModel
 
 ##### HomeModel
 
-I mappen `\webrole1.web\Models` opprett en ny modellklasse for Home:
+In the folder `\webrole1.web\Models` create a new model class for the home page:
 
 	using System.ComponentModel.DataAnnotations;
 
@@ -131,7 +107,7 @@ I mappen `\webrole1.web\Models` opprett en ny modellklasse for Home:
 	    }
 	}
 
-I samme mappe opprett en ny modellklasse for søketreff:
+In the same folder, create a new model class for search results:
 
 	using System.Collections.Generic;
 
@@ -148,7 +124,7 @@ I samme mappe opprett en ny modellklasse for søketreff:
 	    }
 	}
 
-I samme mappe opprett en ny modellklasse for rss-nyhetene som NEST skal mappe fra vår "page"-mapping i elasticsearch til C#. Merk at det brukes `DataMember` og `Name` for å mappe direkte mellom felter i "page"-mappingen og feltene i `RssItem`-klassen.
+In the same folder, create a new model class for the rss-news which NEST will map from a mapping in elasticsearch for the indexed rss-news. Notice the usage of `DataMember` and `Name` to map between the fields in the elasticsearch mapping and properties in the `RssItem`-class.
 
 	using System.Runtime.Serialization;
 	
@@ -181,7 +157,7 @@ I samme mappe opprett en ny modellklasse for rss-nyhetene som NEST skal mappe fr
 
 ##### SearchResult.cshtml
 
-Opprett viewet `SearchResults.cshtml` under `\webrole1.web\views\home` og lim inn følgende kode:
+Create a view `SearchResults.cshtml` in the folder `\webrole1.web\views\home` and paste in the following code:
 
 	@model GWAB.Web.Models.SearchResultsModel
 
@@ -204,7 +180,7 @@ Opprett viewet `SearchResults.cshtml` under `\webrole1.web\views\home` og lim in
 
 ##### HomeController.cs
 
-Lim inn kode i konstruktøren HomeController() for å koble NEST til vår elasticsearch i Windows Azure:
+Paste in the following code into the constructor of the `HomeController`-class to connect NEST to elasticsearch i Windows Azure:
 
 	const string elasticsearchEndpoint = "http://gwab2014-elasticsearch-cluster.cloudapp.net";
 
@@ -217,11 +193,12 @@ Lim inn kode i konstruktøren HomeController() for å koble NEST til vår elasti
 
     _searchClient = new ElasticClient(settings);
 
-Opprett ny privat klassevariabel `_searchClient` øverst i `HomeController`-klassen:
+Create a new private member variable `_searchClient` at the top of the `HomeController`-class:
 
 	private readonly ElasticClient _searchClient;
 
-Lim inn følgende kode for ny action som tar imot søkestrengen, setter søketreffene fra NEST til `Items`-listen i `SearchResultsModel`, og returnerer viewet `SearchResults` med modellen:
+The next code snippet will take in a query, send it to elasticsearch and if there are hits NEST will map the elasticsearch documents to our RssItem-class. The method will then return the list of results in a `SearchResultsModel`-class to the view `SearchResults`.
+Paste in the following code into `HomeController`-class:
 
 	public ActionResult Search(string querystring)
     {
@@ -241,46 +218,78 @@ Lim inn følgende kode for ny action som tar imot søkestrengen, setter søketre
         return View("SearchResults", model);
     }
 
-Test endringene lokalt i Azure-emulatoren ved å merke prosjektet **GWAB.Azure** som "Startup Project" og trykk F5. Søk etter nyheter fra vg.no i søkeboksen og se om det kommer treff. Ha gjerne på breakpoints i "Search"-action så du kan se på spørringene som blir utført av NEST. For innblikk i hva som er indeksert i elasticsearch på *gwab2014-elasticsearch-cluster.cloudapp.net*, gå til [http://gwab2014-elasticsearch-cluster.cloudapp.net/_plugin/head/](http://gwab2014-elasticsearch-cluster.cloudapp.net/_plugin/head/) for å se på dataene.
+Test the changes locally by running the solution in the Azure-emulator. Set the **GWAB.Azure**-project as "Startup Project" and hit F5. 
+Search for news from vg.no by typing text into the search box and click on "Search". Make sure you have a breakpoint in the "Search"-method so that
+you can monitor the execution. For complete insight into the queries that NEST performs monitor the Output-window in Visual Studio.
 
-Deploy applikasjonen ut til Azure og test at søke virker ute på Azure.
+For direct access to the data that's indexed in elasticsearch at *gwab2014-elasticsearch-cluster.cloudapp.net*, go to [http://gwab2014-elasticsearch-cluster.cloudapp.net/_plugin/head/](http://gwab2014-elasticsearch-cluster.cloudapp.net/_plugin/head/).
+
+Deploy the solution to Azure and test again on [gwab2014.cloudapp.net](http://gwab2014.cloudapp.net) when the deploy is complete.
 
 
-3. Opprett et Windows Azure Virtual Network
+2. Opprett et Windows Azure Virtual Network
 -------------------------------------------
 
-Nå har du en cloud service med en web role og et fungerende søk mot elasticsearch. Enn så lenge ligger dette i Azure som en cloud service og isolert. Et mer reelt scenario er at man har flere miljø, typisk utvikling (DEV), staging, produksjon osv. og da bør alle disse instansene samles for å ha kontroll og enklere tilgang.
+You now have a working **Cloud Service** with a **web role** running in Windows Azure that can run queries against elasticsearch. For now these resources are isolated inside of one 
+Cloud Service but a more realistic scenario would be that you will need several environments for development, QA and production. And having all of these 
+resources together into one network would make troubleshooting, remoting, direct access to single instances and disk access much easier than clicking through pages inside the Azure portal.
+Another argument for placing your resources into a virtual network is that you probably don't want to give access to the Azure-portal to all of your developers who will need
+access to a deployed resource. Visual Studio would be a better tool for accessing storage resources, and then using Remote Desktop to access instances inside of the network is a 
+much better practice.
 
-La oss putte dette inn i et **Virtual Network** slik at du kan plassere instanser og tjenester innenfor et lukket nettverk. Å ha ressurser i et lukket nettverk gir mange fordeler, som f.eks. å teste løsningen uten å åpne et *Endpoint* mot omverdnen, få tilgang til lokale disker på instansene og å bruke Remote Desktop inn på instansene uten å måtte gå via *Azure Management Portal*.
+So we will use an **Azure Virtual Network** to group, protect and ease access to our instances. 
+And by placing the instances into different subnets we can easily separate resources based on environment in which they belong to. And we won't have to open up any public 
+endpoints to any of the instances either.
+
+## Create certificates for authentication
+
+We will need to create a root certificate and a derived client certificate for authenticating when we will connect to our network via VPN.
+
+### Generate certificates
+
+Use `makecert` by running "VS2012 x64 Cross Tools Command Prompt" (either 64- or 32-bit version). It's highly recommended that you create a folder 
+`C:\certs` in which all of the certificate artifacts can be placed together. 
+
+Run the following commands:
+
+	# Generate root certificate
+    makecert -sky exchange -r -n "CN=GWAB2014 Root Certificate" -pe -a sha1 -len 2048 -ss My "c:\certs\azure-root-certificate.cer"
+
+	# Generate a client certificate
+	makecert -n "CN=GWAB2014 Client Certificate" -pe -sky exchange -m 96 -ss My -in "GWAB2014 Root Certificate" -is my -a sha1
+
+Verify that you see the root- and client certificate in `certmgr.msc` under Certificates > Current User > Personal > Certificates.
 
 
-### Opprett Virtual Network
+### Create a Virtual Network
 
-1. Gå til Azure Management Portal > Networks > og klikk på "Create a virtual network.
-2. Oppgi følgende:
+Now that you have the neccessary certificates you can create the network.
+
+1. Go to the Azure Management Portal > Networks > and click on "Create a virtual network.
+2. Provide the following:
 	1. Name: gwab2014-we-vnet
 	2. Region: West-Europe
 	3. Affinity Group: Create new
 	4. Affinity Group Name: gwab2014	
-	5. Gå til neste side
-3. Hopp over DNS-Servers og Site-to-Site/Point-to-Site Connectivity og gå til neste side
-4. Vi ønsker å plassere våre ressurser i et 10.0.1.0/24 adresseområde for vårt utviklingsmiljø i Azure (DEV), oppgi følgende:
+	5. Go to the next page
+3. Skip the page with DNS-Servers and Site-to-Site/Point-to-Site Connectivity and proceed to the next page
+4. We wish to place our instances in a 10.0.1.0/24 address space for our development environment i Azure. Provide the following:
 	1. Starting IP: 10.0.1.0
 	2. CIDIR: /24 (256)
-	3. Address Space skal nå være 10.0.1.0/24.
+	3. Address Space should now be 10.0.1.0/24.
 	4. Subnets:
 		1. Name: DEV
 		2. Starting IP: 10.0.1.0 
 		3. CIDIR: /24 (256)
-	5. Bekreft at Usable Address Space er 10.0.1.0 - 10.0.1.255. Dette gir oss 255 ledige adresser for vårt DEV-miljø.
-5. Klikk på Complete-knappen og vent i ca. 5 min mens nettverket blir opprettet.
+	5. Verify that Usable Address Space is 10.0.1.0 - 10.0.1.255. This gives us 255 available addresses for our DEV-environment.
+5. Click on the Complete-button.
 
 
-### Legg inn webrole1 i nettverket
+### Add webrole1 into the network
 
-Du har nå et virtuelt nettverk i Azure. Neste skritt er å melde inn din web role inn i nettverket.
+You have now created the virtual network and it's ready to accept instances. We will now modify the service configuration of the cloud service project to add webrole1 into the network.
 
-Åpne filen `ServiceConfiguration.Cloud.cscfg` og lim inn under `</Role>`:
+Open the file `ServiceConfiguration.Cloud.cscfg` and paste in the code beneath `</Role>`:
 
 	<NetworkConfiguration>
 	    <VirtualNetworkSite name="gwab2014-we-vnet" />
@@ -293,65 +302,154 @@ Du har nå et virtuelt nettverk i Azure. Neste skritt er å melde inn din web ro
 	    </AddressAssignments>
 	</NetworkConfiguration>
 
-Gå til Azure Management Portal og slett cloud servicen (kan ikke legge til ressurser i et nettverk når man foretar update/upgrade på en cloud service). Velg "Publish" på "GWAB.Azure"-prosjektet, opprett ny cloud service (bruk samme navn som du hadde) og klikk på "Publish"-knappen. 
+Go to the Azure Management Portal and delete your cloud service (can add resources to a network when you're performing an update/upgrade of an existing cloud service).
+Choose "Publish" on the "GWAB.Azure"-project, createa a new cloud service (use the same name as before) and click on the "Publish"-button. 
 
-Følg med på dashbordet til det virtuelle nettverket i Azure-portalen. Når løsningen er deployet skal du se din web role instans dukke opp under "resources" med angitt ip-adresse fra subnettet "DEV".
+Go to the virtual network dashboard on the Azure portal and monitor it as the deployment progresses. When the solution is deployed the webrole1-instance
+should appear under "resources" with its assigned IP-address from the DEV-subnet.
 
 
-### Opprett Point-to-Site VPN
+### Create a Point-to-Site VPN
 
-Siste steg er å opprette en VPN-tunnell inn til nettverket slik at man kan komme inn i nettverket utenfor Azure.
+Now that we have a virtual network with resources in it, we want to access those resources from outside of Azure but without having to create public endpoints to them.
+We can use VPN to achieve this.
 
-1. Gå til Azure Management Portal > Network > Configure (arkfane).
-2. Under point-to-site connectivity huk av for "Configure Point-to-site connectivity".
-3. Klikk på "Add address space"-knappen under DEV-subnettet.
-4. Oppgi følgende for VPN- og Gateway-subnettene:
+#### Configure new subnets for VPN
+
+We will need to create new address spaces for VPN and Gateway:
+
+1. Go to Azure Management Portal > Network > Configure.
+2. Under point-to-site connectivity check the "Configure Point-to-site connectivity"-box.
+3. Click on the "Add address space"-button under your DEV-subnet.
+4. Provide the following for VPN- og Gateway-subnets:
 	1. Starting IP: 10.0.9.0
 	2. CIDIR: /24 (251)
-	3. Sjekk at Address Space er 10.0.9.0/27 og Usable Address Range er 10.0.9.4 - 10.0.9.254. Dette gir oss 30 ledige adresser for VPN-klienter og Gateway. 
-	4. Lag subnett VPN:
-		1. Starting IP: 10.0.9.0
-		2. CIDIR: /25 (123)
-		3. Usable Address Range skal være 10.0.9.4 - 10.0.9.126
-	5. Lag subnett Gateway:
+	3. Verify that Address Space is 10.0.9.0/24 and Usable Address Range is 10.0.9.4 - 10.0.9.254. This gives us 250 addresses for VPN-clients and Gateway. 
+	4. Create subnet for VPN:
+		1. Name: VPN
+		2. Starting IP: 10.0.9.0
+		3. CIDIR: /25 (123)
+		4. Usable Address Range should be 10.0.9.4 - 10.0.9.126
+	5. Click on the "Add Gateway Subnet"-button and provide the following:
 		1. Starting IP: 10.0.9.128
 		2. CIDIR: /29 (3)
-		3. Usable Address Range skal være 10.0.9.132 - 10.0.9.134 
-	6. Klikk på Save nederst på siden og velg Yes.
+		3. Usable Address Range should be 10.0.9.132 - 10.0.9.134 
+	6. Click on Save and the bottom of the page and click Yes when prompted.
 
 
+#### Create Gateway
+
+Wait for the previous changes to apply (about 1 minute). Then click on the "Create Gateway"-button at the bottom of the page to create a Gateway. Select Yes when prompted.
+
+This will take about 15 minutes to complete. Time for coffee!
 
 
+#### Upload the root certificate
+
+After the gateway has been created we can upload the root certificate which we created earlier. The VPN-client will use this to create a certificate for authentication and to validate
+the user's client-certificate on his machine.
+
+1. Go to Certificates on the Virtual Network page and choose "Upload a root certificate".
+2. Select the `C:\certs\azure-root-certificate.cer`-file.
+3. Click on the Complete-button.
 
 
+#### Download the VPN-client
 
-4. Opprett en Windows Azure Virtual Machine med elasticsearch
--------------------------------------------
+1. On the virtual network dashboard you should see two links on the right: "Download the 64-bit Client VPN Package" and "Download the 32-bit Client VPN Package". 
+Download the one appropriate for your PC.
+2. Double-click on the file and install the client.
 
-Nå som elasticsearch-teamet har lagd en Azure-plugin er det enkelt å komme igang med en elasticsearch i Azure. Denne beskrivelsen vil vise hvordan vi bruker Azure command-line tool til å opprette en VM basert på et Debian-image, og så bruker vi SSH for å koble til og installere java, elasticsearch og et par nyttige plugins.
+Use `certmgr.msc` to verify that you see a certificate which the VPN-client have installed on your PC:
+ 
+1. Go to Trusted Root Certificate Authorities > Certificates
+2. In the list you should see a certificate with a name similar to "azuregateway-[GUID]"
 
-### Opprett java keystore nøkkel
+Connect with the VPN-client:
 
-Følg beskrivelsen for å opprette en java keystore nøkkel:
+1. On your PC, go to `Control Panel\Network and Internet\Network Connections` and right-click on the VPN-client for your virtual network and select "Connect".
+2. Click "Connect" when the client opens.
+3. Click "Continue".
 
-	openssl x509 -outform der -in azure-certificate.pem -out azure-certificate.cer
+You should now be connected to your network and have access to all of the resources in it. Look at the dashboard on your virtual network and verify that the number
+of clients is "1". Try to ping the webrole1-instance by using its assigned IP-address.
+
+> If you are not connected then try to re-upload the root-certificate, delete the VPN-client from your PC and download and install it again.
+
+
+#### (Optional) Distributed VPN-users
+
+Anyone with a certificate and the VPN-client install package can access your network. Find a buddy and see if you can connect to eachothers network.
+You will have to install a client-certificate on each users PC so that the VPN-client can authenticate against the root-certificate (under Certificates).
+
+1. Use `certmgr.msc` to find the client-certificate on your PC
+2. Right-click and select All Tasks > Export
+3. Select "Yes, export the private key" and click Next and Next
+4. Oppgi **Nnug2014!** as the password
+5. Save the file as `azure-client-certificate.pfx` in `C:\certs`
+
+Send your buddy the pfx-files along with the VPN-client installer-package and have them double-click the pfx-file to install the client-certificate onto their PC.
+Then they can install the VPN-client and should be able to connect to your network. Have them ping your webrole1-instance to test connectivity.
+
+
+4. Create a Windows Azure Virtual Machine with Ubuntu 13 and elasticsearch
+-----------------------------------------------------------
+
+Now that the elasticsearch-team has created an Azure-plugin for elasticsearch with support for multicast node discovery in Azure, it's much more easier than before to have a scalable elasticsearch search cluster in Azure.
+
+We will go through the neccessary steps to provision a VM based on a Ubuntu 13 VM-image, place it into our virtual network and use Putty to connect to it over SSH.
+On this VM we will install Java (prerequisite), elasticsearch and the Azure-plugin for elasticsearch.
+
+Before we can create the VM we will need to generate SSH-keys.
+
+## Generate SSH-certificates and keys
+
+### Generate Java keystore file
+
+We will create a certificate for SSH and then a private key which Putty will use for authentication. Lastly we will create the Java keystore key which elasticsearch will need
+for authenticating.
+
+Open up a command-line tool, find `openssl` and run the following:
+
+	# Create private key and pem-file
+	openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout c:\certs\azure-vm-private.key -out c:\certs\azure-vm-certificate.pem
+
+	# Generate certificate for SSH 
+	openssl x509 -outform der -in c:\certs\azure-vm-certificate.pem -out c:\certs\azure-vm-certificate.cer
 	
-	openssl pkcs8 -topk8 -nocrypt -in azure-private.key -inform PEM -out azure-pk.pem -outform PEM
+	# Generate a keystore (azurekeystore.pkcs12)
+	# Transform private key to PEM format
+	openssl pkcs8 -topk8 -nocrypt -in c:\certs\azure-vm-private.key -inform PEM -out c:\certs\azure-vm-private.pem -outform PEM
 	
-	openssl x509 -inform der -in azure-certificate.cer -out azure-cert.pem
+	# Transform certificate to PEM format
+	openssl x509 -inform der -in c:\certs\azure-vm-certificate.cer -out c:\certs\azure-vm-certificate.pem
+
+	type c:\certs\azure-vm-certificate.pem c:\certs\azure-vm-private.pem > c:\certs\azure-vm-private.pem.txt
 	
-	type azure-cert.pem azure-pk.pem > azure.pem.txt
+	# Use passord: Nnug2014!
+	openssl pkcs12 -export -in c:\certs\azure-vm-private.pem.txt -out c:\certs\azurekeystore.pkcs12 -name azure -noiter -nomaciter
 	
-	openssl pkcs12 -export -in azure.pem.txt -out azurekeystore.pkcs12 -name azure -noiter -nomaciter
-	
-	# Bruk passord: Nnug2014!
+    # If you get the error "Unable to load config info from..." when using openssl.exe, try running:
+    # set OPENSSL_CONF=[folder containing OpenSSL]\openssl.cnf 
+	set OPENSSL_CONF=C:\tools\openssl-0.9.8k_WIN32\openssl.cnf
+    # Validate correct path with:
+	echo %OPENSSL_CONF%
 
-Kopier ut `azurekeystore.pkcs12` fra mappen til `openssl.exe` til `C:\certs`.
+### Generate private key for Putty
+
+Putty uses ppk-files for private keys so we have to convert from `azure-vm-private.key` to `azure-vm-private.ppk` with "puttygen".
+
+1. Run "Puttygen.exe" and go to  File->Load private key. 
+2. Select the `azure-vm-private.key`-file from `C:\certs`. Click on the "Save private key"-button to save the new file. Select "Yes" for not storing a passphrase. 
+3. Name the file `azure-vm-private.ppk` and place it in `C:\certs`. 
 
 
-### Opprett VM
+## Create the virtual machine with Ubunu 13
 
-Så kan vi opprette vår Azure VM basert på image `b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-13_10-amd64-server-20130808-alpha3-en-us-30GB`:
+Now that we have the certificate and private keys generated we can then create the VM. We will use the VM-image `b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-13_10-amd64-server-20130808-alpha3-en-us-30GB`.
+Run the following in the Azure command-line tool:
+
+azure vm create azure-elasticsearch-cluster b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-13_10-amd64-server-20130808-alpha3-en-us-30GB --vm-name myesnode1 --location "West Europe" --vm-size extrasmall --ssh 22 --ssh-cert "C:\certs\azure-vm-certificate.pem" --virtual-network-name gwab2014-we-vnet3 --subnet-names DEV elasticsearch Password123#!!
 		
 	# Deploy an Ubuntu image on an extra small instance in West Europe:
 	azure vm create azure-elasticsearch-cluster \
@@ -360,200 +458,198 @@ Så kan vi opprette vår Azure VM basert på image `b39f27a8b8c64d52b05eac6a62eb
 	
 	--vm-name myesnode1 \
 	
-	--location "West Europe" \
-	
 	--vm-size extrasmall \
-	
+
 	--ssh 22 \
 	
-	--ssh-cert "C:\certs\azure-certificate.pem" \
+	--ssh-cert "C:\certs\azure-vm-certificate.pem" \
+
+	--virtual-network-name gwab2014-we-vnet \ (skip if you haven't created a virtual network in Azure)
+
+	--subnet-names DEV \ (skip if you haven't created a virtual network in Azure)
 	
+	--affinity-group gwab2014 \ (use same group as the one for your virtual network i Azure)
+
 	elasticsearch Password1234#!!
 	
-	# elasticsearch / Password1234#!! are the SSH login/password for this instance.
+	# elasticsearch / Password1234#!! is SSH login/password
+
+	# Example:
+	azure vm create azure-elasticsearch-cluster b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-13_10-amd64-server-20130808-alpha3-en-us-30GB --vm-name myesnode1 --vm-size extrasmall --ssh 22 --ssh-cert "C:\certs\azure-vm-certificate.pem" --virtual-network-name gwab2014-we-vnet --subnet-names DEV --affinity-group gwab2014 elasticsearch Password123#!!
+
+The virtual machine is now being provisioned in Azure. We have placed the VM in the same Affinity Group as our virtual network, and placed it in the DEV-subnet.
+
+Let the provisioning complete before you proceed to the next step. You can follow the progress in the Azure-portal under "Virtual machines".
 
 
-Nå opprettes vår virtuelle maskin i Azure. La det går 2-4 minutter før du går videre til neste steg. Du kan følge framdriften i Azure-portalen under "Virtual machines".
+### Install and configure elasticsearch
 
+We will connect to our VM using Putty and then install elasticsearch.
 
-### Installer og konfigurer elasticsearch
+#### Connect with Putty
 
-Vi kobler opp til vår VM via SSH og bruker Putty til dette. Putty trenger en ppk-fil som er vår private nøkkel så da bruker vi Puttygen til å generere ppk-filen.
-
-
-#### Opprett ppk-fil for Putty
-
-Åpne Puttygen og gå på File->Load private key. Velg filen `azure-private.key` fra `C:\certs\`. Klikk på "Save private key"-knappen for å lagre til ny fil med navn `azure-private.ppk` i samme mappe.
-
-
-#### Koble til med Putty
-
-Oppgi følgende innstillinger i Putty:
+Provide these settings in Putty:
 
 * Session->Host name: `azure-elasticsearch-cluster.cloudapp.net`
-* Connection->SSH->Auth->"Private key file for authentication": Velg filen `azure-private.ppk` fra mappe `C:\certs`. Klikk på "Open".
+* Connection->SSH->Auth->"Private key file for authentication": Select the `azure-private.ppk`-file from `C:\certs`. Click "Open" and select "Yes".
 
-**Viktig**: Får du feilmeldingen "Host does not exist" i Putty så bruk IP-adressen til VM'ens Cloud Service
+**Important**: If you get the error message "Host does not exist" in Putty the connect using the VM's Cloud Service IP-address instead, or wait a bit longer as the DNS-address is being created (can take up to 5 minutes)
 
-Putty starter SSH-sesjonen i kommandovindu. Oppgi så brukernavnet "elasticsearch". Du blir nå autentisert med din private nøkkel og er kommet inn på VM'en.
-
-
-#### Kopiere over java keystore fil med Putty
-
-Vi må kopiere vår java keystore-fil `azurekeystore.pkcs12` fra `C:\certs` over til `/home/elasticsearch` på vår Ubuntu VM. 
-
-Åpne nytt kommandovindu på din maskin og finn `pscp.exe`, og kjør følgende kommando:
-
-	# Kopier java keystore-fil fra C:\certs\ til /home/elasticsearch
-	pscp -i "C:\certs\azurekeystore.pkcs12" elasticsearch@azure-elasticsearch-cluster.cloudapp.net:/home/elasticsearch
-
-*Velg 'Y' hvis du får spørsmål om å lagre host key i cache.*
+Putty will start the SSH-session in a command window. Provide the user name "elasticsearch". You will now be authenticated with your private key and be connected to the VM.
 
 
-Nå skal filen `azurekeystore.pkcs12` være overført til mappen `/home/elasticsearch`. Verifiser dette ved å kjøre: 
+#### Copy over the Java keystore file with Putty
 
-	# Hent filer i home-mappen til elasticsearch
+We need to copy over the Java keystore-file `azurekeystore.pkcs12` from `C:\certs` to `/home/elasticsearch` on our Ubuntu VM. 
+
+Open up a new command line prompt on your PC and find `pscp.exe`. Run the following command:
+
+	# Copies Java keystore-file fra C:\certs\ to /home/elasticsearch
+	pscp -i "C:\certs\azure-vm-private.ppk" "C:\certs\azurekeystore.pkcs12" elasticsearch@azure-elasticsearch-cluster.cloudapp.net:/home/elasticsearch
+
+*Choose 'Y' if your're prompted about storing host key in cache*
+
+Verify the file copy by running: 
+
+	# Get files in /home/elasticsearch
 	ls /home/elasticsearch
 
-### Installer elasticsearch
+### Install Java JRE
 
-Siden elasticsearch trenger Java for å kjøre må vi installere Java JRE 7 på vår VM med OpenJDK7. Kjør følgende kommandoer:
+We need to install Java on the VM as it's a prerequisite for elasticsearch. We will install Java JRE 7 with the following commands:
 
-	# Oppdater alle pakker først
+	# Update all packages
 	sudo apt-get update
 
-	# Installer Java
+	# Install Java JRE 7
 	sudo apt-get install openjdk-7-jre-headless
 
-*Velg 'Y' hvis du blir spurt om diskplassbruk under installasjonen.*
+*Choose 'Y' if prompted about disk space*
 
-Verifiser at Java er blitt installert ved å kjøre:
+Verify that Java is installed by running the command:
 
 	java -version
 
-Da har vi installert Java og vi klare for å installere elasticsearch på vår Ubuntu VM. Vi bruker Putty og kjører følgende kommandoer:
+> If Java is not installed, try running "sudo apt-get update" again and then try installing Java JRE 7
 
-	# Last ned elasticsearch for Debian
+### Install elasticsearch
+
+Now we are ready to install elasticsearch on our Ubuntu VM. Run the following commands in Putty:
+
+	# Download elasticsearch for Debian
 	curl -s https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.0.0.deb -o elasticsearch-1.0.0.deb
 	
-	# Pakk ut og installer
+	# Unpack and install
 	sudo dpkg -i elasticsearch-1.0.0.deb
 
-#### Installer og konfigurer Azure-plugin for elasticsearch
+#### Install and configure the Azure-plugin for elasticsearch
 
-Bruk Putty og kjør følgende kommandoer:
+Use Putty and run the following commands:
 
-	# Stopp elasticsearch
+	# Stopp elasticsearch in case it's running
 	sudo service elasticsearch stop
 
-	# Installer elasticsearch Azure-plugin
-	sudo /usr/share/elasticsearch/bin/plugin -install elasticsearch/elasticsearch-cloud-azure/2.0.0
+	# Install Azure-plugin for elasticsearch 
+	sudo /usr/share/elasticsearch/bin/plugin -install elasticsearch/elasticsearch-cloud-azure/2.1.0
 
-	# Legg inn konfigurasjonsverdier med vi/vim
+	# Add config values with vi/vim ("i" starts editing, ESC + ":x" stores and ends editing)
 	sudo vi /etc/elasticsearch/elasticsearch.yml
 
-Legg inn følgende linjer nederst i .yml-filen:
+Add the following at the bottom of the .yml-file:
 
-	cloud:
-	        azure:
-	            keystore: <path til keystore-fil>
-	            password: <passord til keystore-filen>
-	            subscription_id: <din Azure-subscription id>
-	            service_name: <elasticsearch clusternavn>
-	    discovery:
-	            type: azure
+	cloud.azure.keystore: <path to keystore-file>
+	cloud.azure.password: <password for keystore-file>
+	cloud.azure.subscription_id: <your Azure subscription-id>
+	cloud.azure.service_name: <elasticsearch cluster name>
+	cloud.discovery.type: azure
 
-	# Slå av replica shards for nå
-	index.number_of_replicas: 0
+Example:
 
-Eksempel på ferdig konfigurasjon:
+	cloud.azure.keystore: /home/elasticsearch/azurekeystore.pkcs12
+	cloud.azure.password: Nnug2014!
+	cloud.azure.subscription_id: 78846242-9c0e-47b5-b157-e9727c7599c7
+	cloud.azure.service_name: azure-elasticsearch-cluster
+	cloud.discovery.type: azure
 
-	cloud:
-	    azure:
-	            keystore: /home/elasticsearch/azurekeystore.pkcs12
-	            password: Nnug2014!
-	            subscription_id: 78846242-9c0e-47b5-b157-e9727c7599c7
-	            service_name: azure-elasticsearch-cluster
-	    discovery:
-	            type: azure
+#### Automatic start of elasticsearch as service
 
-	# Slå av replica shards for nå
-	index.number_of_replicas: 0
-
-Start elasticsearch:
-
-	sudo service elasticsearch start
-
-Skulle en feil oppstå underveis, eller senere i forbindelse med utvikling og testing, så kan du finne loggfilen til elasticsearch i mappen `/var/log/elasticsearch`.
+	sudo update-rc.d elasticsearch defaults 95 10
+	sudo /etc/init.d/elasticsearch start
 
 
-#### Åpne port 80 på vår VM
+#### Troubleshooting
 
-For å åpne for spørringer mot elasticsearch må vi sette opp et "public endpoint" mot vår VM i Azure. I endpointet mapper vi port **80** til elasticsearch sin default http-lytteport **9200**.
+Should an error occurr during setup or configuration, or elasticsearch doesn't start, then you can look inside the logfile for more details at `/var/log/elasticsearch/elasticsearch.log`.
 
-Gå til Azure portalen->Virtual machines->myesnode1->endpoints og velg "Add". Velg Add a stand-alone endpoint og gå videre. Oppgi følgende:
+Verify that elasticsearch is running by running the following command:
+
+	curl http://10.0.1.5:9200/ # 10.0.1.5 is the IP-address our VM has been assigned in the DEV-subnet. Or use localhost instead.
+
+
+#### Open port 80 for queries
+
+To be able to query elasticsearch we have to create public endpoint on our VM. The endpoint will map to **80** to elasticsearch's default http-listening port of **9200**.
+
+Go to the Azure portal > Virtual machines > myesnode1 > endpoints and click "Add". Choose "Add a stand-alone endpoint" and proceed. Provide the following:
 		
 * Name: HTTP
 * Protocol: TCP
 * Public port: 80
 * Private port: 9200
 
-og lagre. Gå til [http://azure-elasticsearch-cluster.cloudapp.net/](http://azure-elasticsearch-cluster.cloudapp.net/). Verifiser at du får opp systeminformasjon om elasticsearch-clusteret.
-		
-### Valgfrie oppgaver
+and save. Go to [http://azure-elasticsearch-cluster.cloudapp.net/](http://azure-elasticsearch-cluster.cloudapp.net/) and verify that you get elasticsearch's cluster details.
 
-#### Installer plugins til elasticsearch på din VM
 
-Det er spesielt to plugins til elasticsearch som gir oversikt over noder, indekser, aliaser m.m. Dette er **Head** og **BigDesk**, og kjør følgende kommandoer i Putty-kommendovinduet for å installere disse:
+#### (Valgfritt) Install plugins for elasticsearch
 
-	# Installer plugins Head og BigDesk
+There are particularily two plugins for elasticsearch that everyone should install. 
+The first one is called **Head** and gives administrators an overview of documents, indexes, aliases, mappings, system information etc.
+The other one is called **BigDesk** and is a monitoring tool for administrators for monitoring system events and state.
+
+Use Putty and run the following commands to install these plugins:
+
+	sudo service elasticsearch stop
+
+	# Install plugins Head and BigDesk
 	sudo /usr/share/elasticsearch/bin/plugin -install mobz/elasticsearch-head
 	
 	sudo /usr/share/elasticsearch/bin/plugin -install lukas-vlcek/bigdesk
 
-Restart elasticsearch:
+	sudo service elasticsearch start
 
-	sudo service elasticsearch restart
+elasticsearch-head now ready at [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/) 
+and bigdesk at [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/bigdesk/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/bigdesk/).
 
-elasticsearch-head er nå klar på [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/) og bigdesk på [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/bigdesk/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/bigdesk/).
 
+#### (Valgfritt) Skale your elasticsearch-VM
 
-#### Skalering av din elasticsearch-VM
+Now that we have en elasticsearch-cluster running in Azure it might be useful to scale out to handle large load of queries.
+This can be scripted with Azure command-line tool. We will scale out from a 1 node cluster to a 3 node cluster by capturing an image of the VM we have running now, and then provision 3 new VMs based on this vm-image.
 
-Nå som vi har en elasticsearch på en VM kan det være nyttig å kunne skalere ut for å ta imot større pågang. Dette kan skriptes med Azure command-line tool. Vi skalerer ut vår VM til 10 instanser ved å slå av vår VM, fange et image av VM'en, og så opprette 10 stk VM'er basert på dette imaget. 
+In the Azure command-line tool, run the following command:
 
-Her er en beskrivelse av kommandoene du kan kjøre:
-
-	# Slå av VM
+	# Shutdown the VM
 	azure vm shutdown myesnode1
 	
-	# Fang et image av VM'en
+	# Capture the VM-image
 	azure vm capture myesnode1 esnode-image --delete
 	
-	# Start 10 instanser av vår VM:
-	for x in $(seq 1 10)
-	    do
-	        echo "Launching azure instance #$x..."
-	        azure vm create azure-elasticsearch-cluster \
-	                        esnode-image \
-	                        --vm-name myesnode$x \
-	                        --vm-size extrasmall \
-	                        --ssh $((21 + $x)) \
-	                        --ssh-cert /tmp/azure-certificate.pem \
-	                        --connect \
-	                        elasticsearch Password1234#!!
-	    done
+	# Provision 3 VMs
+	FOR %? IN (1 2 3) DO azure vm create azure-elasticsearch-cluster esnode-image --vm-name myesnode-%? --vm-size extrasmall --ssh 2%? --ssh-cert "C:\certs\azure-vm-certificate.pem" --virtual-network-name gwab2014-we-vnet --subnet-names DEV --affinity-group gwab2014 --connect elasticsearch Password1234#!!
 
-Vent 2-4 minutter og så gå til http://azure-elasticsearch-cluster.cloudapp.net/. Verifiser at du får opp systeminformasjon om elasticsearch-clusteret. Så gå til [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/) (hvis du installerte Head-plugin til elasticsearch) og verifiser at du ser 10 noder.
+Wait 2-4 minutes and then go to http://azure-elasticsearch-cluster.cloudapp.net/. Verify that you can see cluster details about the elasticsearch cluster.
+Then go to [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/) (if you have installed the Head-plugin for elasticsearch) and verify that you see 3 nodes.
 
 
-#### Indekser data til din elasticsearch med RSS-rivers
+#### Index data to your elasticsearch with RSS-rivers
 
-For å indeksere data inn i elasticsearch brukes "data rivers". Dette er java-programmer som mater data inn i elasticsearch via REST-kall til gitte tider. Det finnes mange ulike varianter (xml, rss, json m.m.) å velge blant og med litt Java-kunnskap kan man lage egne.
+For indexing data into elasticsearch you use "data rivers". These are Java-programs that feeds elasticsearch with data by sending REST-calls at given intervals and creating new documents.
+There are alot of different types of rivers one can use (xml, json, rss, web services, files etc.)
 
-I denne oppgaven følger vi [denne guiden](http://www.pilato.fr/rssriver/) for å sette opp en enkel rss-river til å konsumere en [rss-feed](http://www.vg.no/rss/create.php?categories=12,21,20,34,10,164,22,25&keywords=&limit=20) levert av vg.no.
+For this assignment we will follow [this guide](http://www.pilato.fr/rssriver/) to setup a rss-river to consume an [rss-feed](http://www.vg.no/rss/create.php?categories=12,21,20,34,10,164,22,25&keywords=&limit=20)
+provided by vg.no.
 
-I Putty-kommandolinje kjør følgende:
+Run the following commands in Putty:
 
 	cd /usr/share/elasticsearch
 
@@ -583,6 +679,8 @@ I Putty-kommandolinje kjør følgende:
 	  }
 	}'
 
-Nå har du opprettet en ny index **newspapers** og en ny mapping **page** for alle *documents* som skal indekseres hit. Riveren vil putte hvert rss-objekt inn som et nytt *document* i denne indexen. 
+You have now created a new index **newspapers** and a new mapping **page** for all of the *documents* that will be created in the index.
+The riveren will put each rss-object it finds in the rss-feed as a new document in this index. The last command configures the river to setup a new rss-feed to consume.
 
-Hvis du har installert Head-plugin kan du gå til [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/) og se at data er nå indeksert. 
+If you have installed the Head-plugin then you can go to [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/) 
+and see that documents are being created inside the **newspapers**-index. Hit the blue Refresh-button to refresh the index as new documents are created.
