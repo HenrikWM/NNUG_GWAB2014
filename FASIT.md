@@ -8,7 +8,7 @@ Contents
 --------
 
 * *Create* and *deploy* a **Azure Cloud Service** containing a **web role**
-* *Create* a **Azure Virtual Network** and invite the **web role** into the network
+* *Create* a **Azure Virtual Network** and move the **web role** into the network
 * *Create* and *configure* **Point-to-Site VPN** to access the  **Azure Virtual Network**
 * *Create* an **Azure Virtual Machine** with Debian running an instance of **elasticsearch**
 
@@ -21,7 +21,7 @@ If you are going to follow all of the steps in this assignment, then make sure y
 * Have installed the latest version of Azure SDK
 * Have installed the [Azure command-line tool](http://www.windowsazure.com/en-us/develop/nodejs/how-to-guides/command-line-tools/)
 * Have installed [OpenSSL for Windows](http://code.google.com/p/openssl-for-windows/downloads/detail?name=openssl-0.9.8k_WIN32.zip&can=2&q=) 
-* Have downloaded [PuttyGen](http://the.earth.li/~sgtatham/putty/latest/x86/puttygen.exe), [Putty](http://the.earth.li/~sgtatham/putty/latest/x86/putty.exe) og [PSCP](http://the.earth.li/~sgtatham/putty/latest/x86/pscp.exe) 
+* Have downloaded [PuttyGen](http://the.earth.li/~sgtatham/putty/latest/x86/puttygen.exe), [Putty](http://the.earth.li/~sgtatham/putty/latest/x86/putty.exe) and [PSCP](http://the.earth.li/~sgtatham/putty/latest/x86/pscp.exe) 
 * Have an account for the [Azure-portal](http://www.windowsazure.com/)
 
 ### About this assignment
@@ -124,7 +124,7 @@ In the same folder, create a new model class for search results:
 	    }
 	}
 
-In the same folder, create a new model class for the rss-news which NEST will map from a mapping in elasticsearch for the indexed rss-news. Notice the usage of `DataMember` and `Name` to map between the fields in the elasticsearch mapping and properties in the `RssItem`-class.
+In the same folder, create a new model class for the RSS-news which NEST will map from a mapping in elasticsearch for the indexed RSS-news. Notice the usage of `DataMember` and `Name` to map between the fields in the elasticsearch mapping and properties in the `RssItem`-class.
 
 	using System.Runtime.Serialization;
 	
@@ -227,8 +227,8 @@ For direct access to the data that's indexed in elasticsearch at *gwab2014-elast
 Deploy the solution to Azure and test again on [gwab2014.cloudapp.net](http://gwab2014.cloudapp.net) when the deploy is complete.
 
 
-2. Opprett et Windows Azure Virtual Network
--------------------------------------------
+Assignment #2: Create a Windows Azure Virtual Network
+-----------------------------------------
 
 You now have a working **Cloud Service** with a **web role** running in Windows Azure that can run queries against elasticsearch. For now these resources are isolated inside of one 
 Cloud Service but a more realistic scenario would be that you will need several environments for development, QA and production. And having all of these 
@@ -263,7 +263,7 @@ Verify that you see the root- and client certificate in `certmgr.msc` under Cert
 
 ### Create a Virtual Network
 
-Now that you have the neccessary certificates you can create the network.
+Now that you have the necessary certificates you can create the network.
 
 1. Go to the Azure Management Portal > Networks > and click on "Create a virtual network.
 2. Provide the following:
@@ -303,7 +303,7 @@ Open the file `ServiceConfiguration.Cloud.cscfg` and paste in the code beneath `
 	</NetworkConfiguration>
 
 Go to the Azure Management Portal and delete your cloud service (can add resources to a network when you're performing an update/upgrade of an existing cloud service).
-Choose "Publish" on the "GWAB.Azure"-project, createa a new cloud service (use the same name as before) and click on the "Publish"-button. 
+Choose "Publish" on the "GWAB.Azure"-project, create a a new cloud service (use the same name as before) and click on the "Publish"-button. 
 
 Go to the virtual network dashboard on the Azure portal and monitor it as the deployment progresses. When the solution is deployed the webrole1-instance
 should appear under "resources" with its assigned IP-address from the DEV-subnet.
@@ -321,7 +321,7 @@ We will need to create new address spaces for VPN and Gateway:
 1. Go to Azure Management Portal > Network > Configure.
 2. Under point-to-site connectivity check the "Configure Point-to-site connectivity"-box.
 3. Click on the "Add address space"-button under your DEV-subnet.
-4. Provide the following for VPN- og Gateway-subnets:
+4. Provide the following details for VPN- and Gateway-subnets:
 	1. Starting IP: 10.0.9.0
 	2. CIDIR: /24 (251)
 	3. Verify that Address Space is 10.0.9.0/24 and Usable Address Range is 10.0.9.4 - 10.0.9.254. This gives us 250 addresses for VPN-clients and Gateway. 
@@ -392,12 +392,12 @@ Send your buddy the pfx-files along with the VPN-client installer-package and ha
 Then they can install the VPN-client and should be able to connect to your network. Have them ping your webrole1-instance to test connectivity.
 
 
-4. Create a Windows Azure Virtual Machine with Ubuntu 13 and elasticsearch
+Assignment #3: Create a Windows Azure Virtual Machine with Ubuntu 13 and elasticsearch
 -----------------------------------------------------------
 
 Now that the elasticsearch-team has created an Azure-plugin for elasticsearch with support for multicast node discovery in Azure, it's much more easier than before to have a scalable elasticsearch search cluster in Azure.
 
-We will go through the neccessary steps to provision a VM based on a Ubuntu 13 VM-image, place it into our virtual network and use Putty to connect to it over SSH.
+We will go through the necessary steps to provision a VM based on a Ubuntu 13 VM-image, place it into our virtual network and use Putty to connect to it over SSH.
 On this VM we will install Java (prerequisite), elasticsearch and the Azure-plugin for elasticsearch.
 
 Before we can create the VM we will need to generate SSH-keys.
@@ -426,7 +426,7 @@ Open up a command-line tool, find `openssl` and run the following:
 
 	type c:\certs\azure-vm-certificate.pem c:\certs\azure-vm-private.pem > c:\certs\azure-vm-private.pem.txt
 	
-	# Use passord: Nnug2014!
+	# Use password: Nnug2014!
 	openssl pkcs12 -export -in c:\certs\azure-vm-private.pem.txt -out c:\certs\azurekeystore.pkcs12 -name azure -noiter -nomaciter
 	
     # If you get the error "Unable to load config info from..." when using openssl.exe, try running:
@@ -439,12 +439,12 @@ Open up a command-line tool, find `openssl` and run the following:
 
 Putty uses ppk-files for private keys so we have to convert from `azure-vm-private.key` to `azure-vm-private.ppk` with "puttygen".
 
-1. Run "Puttygen.exe" and go to  File->Load private key. 
+1. Run "puttygen.exe" and go to  File->Load private key. 
 2. Select the `azure-vm-private.key`-file from `C:\certs`. Click on the "Save private key"-button to save the new file. Select "Yes" for not storing a passphrase. 
 3. Name the file `azure-vm-private.ppk` and place it in `C:\certs`. 
 
 
-## Create the virtual machine with Ubunu 13
+## Create the virtual machine with Ubuntu 13
 
 Now that we have the certificate and private keys generated we can then create the VM. We will use the VM-image `b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-13_10-amd64-server-20130808-alpha3-en-us-30GB`.
 Run the following in the Azure command-line tool:
@@ -507,7 +507,7 @@ Open up a new command line prompt on your PC and find `pscp.exe`. Run the follow
 	# Copies Java keystore-file fra C:\certs\ to /home/elasticsearch
 	pscp -i "C:\certs\azure-vm-private.ppk" "C:\certs\azurekeystore.pkcs12" elasticsearch@azure-elasticsearch-cluster.cloudapp.net:/home/elasticsearch
 
-*Choose 'Y' if your're prompted about storing host key in cache*
+*Choose 'Y' if you're prompted about storing host key in cache*
 
 Verify the file copy by running: 
 
@@ -562,6 +562,7 @@ Add the following at the bottom of the .yml-file:
 	cloud.azure.subscription_id: <your Azure subscription-id>
 	cloud.azure.service_name: <elasticsearch cluster name>
 	cloud.discovery.type: azure
+	cloud.enabled: true
 
 Example:
 
@@ -570,6 +571,7 @@ Example:
 	cloud.azure.subscription_id: 78846242-9c0e-47b5-b157-e9727c7599c7
 	cloud.azure.service_name: azure-elasticsearch-cluster
 	cloud.discovery.type: azure
+	cloud.enabled: true
 
 #### Automatic start of elasticsearch as service
 
@@ -583,12 +585,14 @@ Should an error occurr during setup or configuration, or elasticsearch doesn't s
 
 Verify that elasticsearch is running by running the following command:
 
-	curl http://10.0.1.5:9200/ # 10.0.1.5 is the IP-address our VM has been assigned in the DEV-subnet. Or use localhost instead.
+	# 10.0.1.5 is the IP-address our VM has been assigned in the DEV-subnet. 
+	# Or use 'localhost' instead.
+	curl http://10.0.1.5:9200/ 
 
 
-#### Open port 80 for queries
+#### Open port 80 for queries to elasticsearch
 
-To be able to query elasticsearch we have to create public endpoint on our VM. The endpoint will map to **80** to elasticsearch's default http-listening port of **9200**.
+To be able to query elasticsearch we have to create public endpoint on our VM. The endpoint will map to **80** to elasticsearch's default HTTP-listening port of **9200**.
 
 Go to the Azure portal > Virtual machines > myesnode1 > endpoints and click "Add". Choose "Add a stand-alone endpoint" and proceed. Provide the following:
 		
@@ -600,11 +604,9 @@ Go to the Azure portal > Virtual machines > myesnode1 > endpoints and click "Add
 and save. Go to [http://azure-elasticsearch-cluster.cloudapp.net/](http://azure-elasticsearch-cluster.cloudapp.net/) and verify that you get elasticsearch's cluster details.
 
 
-#### (Valgfritt) Install plugins for elasticsearch
+#### (Optional) Install plugins for elasticsearch
 
-There are particularily two plugins for elasticsearch that everyone should install. 
-The first one is called **Head** and gives administrators an overview of documents, indexes, aliases, mappings, system information etc.
-The other one is called **BigDesk** and is a monitoring tool for administrators for monitoring system events and state.
+There are particularly two plugins for elasticsearch that everyone should install. The first one is called **Head** and gives administrators an overview of documents, indexes, aliases, mappings, system information etc. The other one is called **BigDesk** and is a monitoring tool for administrators for monitoring system events and state.
 
 Use Putty and run the following commands to install these plugins:
 
@@ -621,10 +623,9 @@ elasticsearch-head now ready at [http://azure-elasticsearch-cluster.cloudapp.net
 and bigdesk at [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/bigdesk/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/bigdesk/).
 
 
-#### (Valgfritt) Skale your elasticsearch-VM
+#### (Optional) Scale your elasticsearch-VM
 
-Now that we have en elasticsearch-cluster running in Azure it might be useful to scale out to handle large load of queries.
-This can be scripted with Azure command-line tool. We will scale out from a 1 node cluster to a 3 node cluster by capturing an image of the VM we have running now, and then provision 3 new VMs based on this vm-image.
+Now that we have en elasticsearch-cluster running in Azure it might be useful to scale out to handle large load of queries. This can be scripted with Azure command-line tool. We will scale out from a 1 node cluster to a 3 node cluster by capturing an image of the VM we have running now, and then provision 3 new VMs based on this VM-image.
 
 In the Azure command-line tool, run the following command:
 
@@ -638,22 +639,24 @@ In the Azure command-line tool, run the following command:
 	FOR %? IN (1 2 3) DO azure vm create azure-elasticsearch-cluster esnode-image --vm-name myesnode-%? --vm-size extrasmall --ssh 2%? --ssh-cert "C:\certs\azure-vm-certificate.pem" --virtual-network-name gwab2014-we-vnet --subnet-names DEV --affinity-group gwab2014 --connect elasticsearch Password1234#!!
 
 Wait 2-4 minutes and then go to http://azure-elasticsearch-cluster.cloudapp.net/. Verify that you can see cluster details about the elasticsearch cluster.
+
 Then go to [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/) (if you have installed the Head-plugin for elasticsearch) and verify that you see 3 nodes.
 
 
 #### Index data to your elasticsearch with RSS-rivers
 
 For indexing data into elasticsearch you use "data rivers". These are Java-programs that feeds elasticsearch with data by sending REST-calls at given intervals and creating new documents.
-There are alot of different types of rivers one can use (xml, json, rss, web services, files etc.)
 
-For this assignment we will follow [this guide](http://www.pilato.fr/rssriver/) to setup a rss-river to consume an [rss-feed](http://www.vg.no/rss/create.php?categories=12,21,20,34,10,164,22,25&keywords=&limit=20)
-provided by vg.no.
+There are several different types of rivers one can use to consume data sources, such as XML, json, RSS, web services, files and more.
+
+For this assignment we will follow [this guide](http://www.pilato.fr/rssriver/) to setup a RSS-river to consume an [RSS-feed](http://www.vg.no/rss/create.php?categories=12,21,20,34,10,164,22,25&keywords=&limit=20)
+provided by [vg.no](http://www.vg.no).
 
 Run the following commands in Putty:
+	
+	sudo service elasticsearch stop
 
-	cd /usr/share/elasticsearch
-
-	bin/plugin -install fr.pilato.elasticsearch.river/rssriver/0.2.0
+	sudo /usr/share/elasticsearch/bin/plugin -install fr.pilato.elasticsearch.river/rssriver/0.2.0
 		
 	curl -XPUT 'http://localhost:9200/newspapers/' -d '{}'
 	
@@ -679,8 +682,8 @@ Run the following commands in Putty:
 	  }
 	}'
 
-You have now created a new index **newspapers** and a new mapping **page** for all of the *documents* that will be created in the index.
-The riveren will put each rss-object it finds in the rss-feed as a new document in this index. The last command configures the river to setup a new rss-feed to consume.
+	sudo service elasticsearch start
 
-If you have installed the Head-plugin then you can go to [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/) 
-and see that documents are being created inside the **newspapers**-index. Hit the blue Refresh-button to refresh the index as new documents are created.
+You have now created a new index called **newspapers** and a new mapping called **page** for all of the **documents** that will be created in the index. The river will take each item it finds in the RSS-feed and create a new document in this index based on the **page**-mapping. The last command configures the river to setup a new RSS-feed to consume.
+
+If you have installed the Head-plugin then you can go to [http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/](http://azure-elasticsearch-cluster.cloudapp.net/_plugin/head/) and see that documents are being created inside the **newspapers**-index. Hit the blue Refresh-button to the far right to refresh the index as new documents are created.
