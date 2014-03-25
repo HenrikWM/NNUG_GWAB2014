@@ -12,7 +12,7 @@ namespace GWAB.Web.Controllers
 
         public HomeController()
         {
-            const string elasticsearchEndpoint = "http://gwab2014-elasticsearch-cluster.cloudapp.net";
+            const string elasticsearchEndpoint = "http://gwab2014-elasticsearch-cluster.cloudapp.net:9200";
 
             var uri = new Uri(elasticsearchEndpoint);
 

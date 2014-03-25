@@ -1,13 +1,12 @@
 NNUG - Global Windows Azure Bootcamp 2014
 =========================================
 
-Dette er workshop-oppgaver som ble gitt i forbindelse med NNUGs Global Windows Azure Bootcamp 2014 hos Bouvet 29. mars 2014.
+This is a collection of workshop assignments that were given at NNUGs Global Windows Azure Bootcamp 2014 @ Bouvet 29. March 2014.
 
-## Oppgavesett - Søkedrevet nettportal med elasticsearch
+## Assignments overview
 
-I oppgavesettet blir du guidet igjennom ulike aspekter av Windows Azure. Caset er at du skal lage en søkedrevet nettportal som er integrert med elasticsearch. For å få til dette trenger du å opprette SSH-nøkler, en cloud service med en web role, et virtuelt nettverk med VPN og til slutt opprette VM'en hvor du skal sette opp elasticsearch på Ubuntu.
+The assignments will guide you step-by-step through the process of creating a **Azure Cloud Service**, **Azure Virtual Network**, **Point-to-Site VPN**, **Azure Virtual Machine** running **Ubuntu** with **elasticsearch** and finally an elasticsearch-cluster of your own.
 
-Oppgavesettet beskriver hva som skal lages men er ikke en step-by-step guide. Følg gjerne [løsningsforslaget](https://github.com/HenrikWM/NNUG_GWAB2014/blob/master/FASIT.md) istedet hvis du ønsker å følge en mer detaljert guide.
 
-[Gå til oppgavesettet](https://github.com/HenrikWM/NNUG_GWAB2014/blob/master/FASIT.md).
+[Proceed to the assignments](https://github.com/HenrikWM/NNUG_GWAB2014/blob/master/FASIT.md).
 

@@ -15,7 +15,7 @@
     </Certificates>
   </Role>
   <NetworkConfiguration>
-    <VirtualNetworkSite name="gwab2014-we-vnet3" />
+    <VirtualNetworkSite name="gwab2014-we-vnet" />
     <AddressAssignments>
       <InstanceAddress roleName="GWAB.Web">
         <Subnets>
