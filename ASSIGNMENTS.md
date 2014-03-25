@@ -1,7 +1,7 @@
 NNUG - Global Windows Azure Bootcamp 2014
 =========================================
 
-This is a step-by-step workshop assignment that was given during NNUG's Global Windows Azure Bootcamp 2014 @ Bouvet on 29. March 2014. 
+This is a collection of workshop assignments that was given during NNUG's Global Windows Azure Bootcamp 2014 @ Bouvet on 29. March 2014. 
 
 
 Overview of assignments
@@ -38,18 +38,18 @@ In this assignment you will create a **Azure Cloud Service** and a **web role**.
 ### Create the Cloud Service with a web role
 
 1. Open Visual Studio in elevated mode and choose File > New project. Choose the Visual C# template > Cloud > Windows Azure Cloud Service:
- - Name: GWAB.Azure
- - Solution: GWAB
- - Click Ok.
-2. Choose ASP.NET Web Role and click on the right-arrow to add it into our Cloud Service. Click Ok.
-3. Choose the template "MVC" and click on "Change Authentication" and select "No Authentication". Click Ok.
+ - Name: **GWAB.Azure**
+ - Solution: **GWAB**
+ - Click **Ok**.
+2. Choose **ASP.NET Web Role** and click on the right-arrow to add it into our Cloud Service. Click Ok.
+3. Choose the template **MVC** and click on **Change Authentication** and select **No Authentication**. Click **Ok**.
 
 You have now created a Cloud Service with a ASP.net MVC web role. You can now deploy your solution and website to Azure:
 
-1. Right-click on the GWAB.Azure-project and choose "Publish".
+1. Right-click on the **GWAB.Azure**-project and choose **Publish**.
 2. Log in with your Azure-credentials and select you subscription in the list and click Next.
-3. Create a new Cloud Service by going to "Cloud Service:" and select "Create New" from the dropdow-menu. Specify "*GWAB2014-[your initials here]*" and select location "West Europe". 
-4. Click Next and then Publish on the next page.
+3. Create a new Cloud Service by going to "Cloud Service:" and select "Create New" from the dropdow-menu. Specify *GWAB2014-[your initials here]* and select location **West Europe**. 
+4. Click **Next** and then **Publish** on the next page.
 
 Your Azure Cloud Service is now being deployed to Azure. To see the deployment in action, go to the Azure-portal and then to Cloud Services > GWAB2014-[your initials here]. When the deploy is complete you can try to access the website by navigating with a browser to *gwab2014-[your initials here].cloudapp.net*.
 
@@ -61,7 +61,7 @@ There's an instance of elasticsearch set up for this workshop in Azure. The web 
 
 #### Install NEST with NuGet
 
-Set Webrole1 as "Default project" and install NEST by running the following command in the Package Manager Console in Visual Studio:
+Set `Webrole1` as **Default project** and install `NEST` by running the following command in the Package Manager Console in Visual Studio:
 
     PM> Install-Package NEST
 
@@ -181,7 +181,7 @@ Create a view `SearchResults.cshtml` in the folder `\webrole1.web\views\home` an
 
 ##### HomeController.cs
 
-Paste in the following code into the constructor of the `HomeController`-class to connect NEST to elasticsearch i Windows Azure:
+Paste in the following code into the constructor of the `HomeController`-class to connect `NEST` to elasticsearch i Windows Azure:
 
 	const string elasticsearchEndpoint = "http://gwab2014-elasticsearch-cluster.cloudapp.net:9200";
 
