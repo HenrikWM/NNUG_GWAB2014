@@ -688,14 +688,22 @@ You've now got a load-balanced elasticsearch cluster running in Azure on Ubuntu 
 Remarks
 -------
 
+### Availability Sets
+
 Before going into production with this setup, one should place the VMs in an "Availability Set" so that you can ensure a stable environment for the service.
+
+### Different methods of scaling
 
 Our solution is a static method of scaling, by manually editing elasticsearch's unicast host-list. There are other ways of scaling which also should be considered. 
 
-One way is to create a worker role that deploys a full installation with Java and elasticsearch, and edits the elasticsearch.yml-file's unicast host-list during deploy and provides it with all instance-IPs. 
+One way is to create a worker role that deploys a full installation with Java and elasticsearch, and edits the elasticsearch.yml-file's unicast host-list during deploy and provides it with all of the instance's IP-addresses. 
 
-Or perhaps try a new [Azure-plugin for elasticsearch](https://github.com/elasticsearch/elasticsearch-cloud-azure) which offers multicast node discovery in Azure. At the present time it requires a Java-keystore SSL-key and certificates, which might be complicated to configure properly and to troubleshoot.
+Or perhaps try a new [Azure-plugin for elasticsearch](https://github.com/elasticsearch/elasticsearch-cloud-azure) which offers multicast node discovery in Azure. At the present time it requires a Java-keystore SSL-key and certificates, which might be complicated to configure properly and to troubleshoot. There are also challenges with OpenSSL on Windows which seems to sometimes not generate valid key-files. It's definatly something to have a look at as it matures and becomes more stable.
 
+### Maximize performance
+
+Our VMs runs on an **ExtraSmall** VM-size meaning there's a limit to the number of [disks, memory and CPU-cores](http://msdn.microsoft.com/en-us/library/windowsazure/dn197896.aspx) available to the VM. Of course, upgrading to a larger VM-size is a logical next step but this only increases memory and CPU-sizes, not disk-efficiency, even though you get another disk. 
+A VM-disk is limited to 500 iops and for a high-performance scenario you want to use more disks so that data is spread across multiple disks. This way the iops-limit won't act as a bottleneck. To enable this for elasticsearch you need to [specify the paths for the data directories](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup-dir-layout.html) in elasticsearch's configuration.
 
 
 
