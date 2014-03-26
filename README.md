@@ -7,5 +7,5 @@ This is a collection of workshop assignments that were given at NNUGs Global Win
 
 The assignments will act as a step-by-step guide in which you will be introduced to the process of creating an **Azure Cloud Service**, **Azure Virtual Network**, **Point-to-Site VPN**, **Azure Virtual Machine** running **Ubuntu** with **elasticsearch** and finally an elasticsearch-cluster of your own.
 
-[Proceed to the assignments](https://github.com/HenrikWM/NNUG_GWAB2014/blob/master/FASIT.md).
+[Proceed to the assignments](https://github.com/HenrikWM/NNUG_GWAB2014/blob/master/ASSIGNMENTS.md).
 
