@@ -44,14 +44,19 @@ In this assignment you will create a **Azure Cloud Service** and a **web role**.
 2. Choose **ASP.NET Web Role** and click on the right-arrow to add it into our Cloud Service. Click Ok.
 3. Choose the template **MVC** and click on **Change Authentication** and select **No Authentication**. Click **Ok**.
 
-You have now created a Cloud Service with a ASP.net MVC web role. You can now deploy your solution and website to Azure:
+You have now created a Cloud Service with an ASP.net MVC web role. You can now deploy your solution and website to Azure:
 
 1. Right-click on the **GWAB.Azure**-project and choose **Publish**.
-2. Log in with your Azure-credentials and select you subscription in the list and click Next.
-3. Create a new Cloud Service by going to "Cloud Service:" and select "Create New" from the dropdow-menu. Specify *GWAB2014-[your initials here]* and select location **West Europe**. 
+2. Sign-in with your Azure-credentials and select you subscription in the list and click Next.
+3. Create a new Cloud Service by going to "Cloud Service:" and select "Create New" from the dropdow-menu:
+	1. Name: *GWAB2014-[your initials here]*
+	2. Location: **West Europe**  
+4. Click on **Advanced Settings** and under **Storage Account** select "Create new..." and provide:
+	1. Name: gwab2014[your initials here] (note: lower-case only!)
+	2. Location: **West Europe**
 4. Click **Next** and then **Publish** on the next page.
 
-Your Azure Cloud Service is now being deployed to Azure. To see the deployment in action, go to the Azure-portal and then to Cloud Services > GWAB2014-[your initials here]. When the deploy is complete you can try to access the website by navigating with a browser to *gwab2014-[your initials here].cloudapp.net*.
+Your Azure Cloud Service is now being deployed to Azure. To see the deployment in action, go to the Azure-portal and then to Cloud Services > gwab2014-[your initials here]. When the deploy is complete you can try to access the website by navigating with a browser to *gwab2014-[your initials here].cloudapp.net*.
 
 
 ### Connect to elasticsearch
@@ -61,40 +66,20 @@ There's an instance of elasticsearch set up for this workshop in Azure. The web 
 
 #### Install NEST with NuGet
 
-Set `Webrole1` as **Default project** and install `NEST` by running the following command in the Package Manager Console in Visual Studio:
+Open the Package Manager Console in Visual Studio, set `Webrole1` as **Default project** and then install `NEST` by running the following command in the :
 
     PM> Install-Package NEST
 
 
 #### Add code for search
 
-##### index.cshtml
-
-Paste the following code into `\webrole1.web\views\home\index.cshtml` after line 12:
-
-	<div class="row">
-	    <div class="col-md-12">
-	        @{
-	            using (Html.BeginForm("search", "Home"))
-	            {
-	                <p>@Html.TextBoxFor(m => m.QueryString, new { @class = "form-control", placeholder = "Search for news from vg.no..." })</p>
-	                <p><input type="submit" value="Search" class="btn btn-primary btn-large" /></p>
-	            }
-	        }
-	    </div>
-	</div>
-
-and paste in at the very top of the file:
-
-	@model GWAB.Web.Models.HomeModel
-
 ##### HomeModel
 
-In the folder `\webrole1.web\Models` create a new model class for the home page:
+In the folder `\webrole1\Models` create a new model class for the home page:
 
 	using System.ComponentModel.DataAnnotations;
 
-	namespace GWAB.Web.Models
+	namespace WebRole1.Models
 	{
 	    public class HomeModel
 	    {
@@ -112,7 +97,7 @@ In the same folder, create a new model class for search results:
 
 	using System.Collections.Generic;
 
-	namespace GWAB.Web.Models
+	namespace WebRole1.Models
 	{
 	    public class SearchResultsModel
 	    {
@@ -129,7 +114,7 @@ In the same folder, create a new model class for the RSS-news which NEST will ma
 
 	using System.Runtime.Serialization;
 	
-	namespace GWAB.Web.Models
+	namespace WebRole1.Models
 	{
 	    [DataContract]
 	    public class RssItem
@@ -156,11 +141,33 @@ In the same folder, create a new model class for the RSS-news which NEST will ma
 	    }
 	}
 
+Add a reference to the assembly `System.Runtime.Serialization`.
+
+##### index.cshtml
+
+Paste the following code into `\webrole1\views\home\index.cshtml` after line 10:
+
+	<div class="row">
+	    <div class="col-md-12">
+	        @{
+	            using (Html.BeginForm("search", "Home"))
+	            {
+	                <p>@Html.TextBoxFor(m => m.QueryString, new { @class = "form-control", placeholder = "Search for news from vg.no..." })</p>
+	                <p><input type="submit" value="Search" class="btn btn-primary btn-large" /></p>
+	            }
+	        }
+	    </div>
+	</div>
+
+and paste in at the very top of the file:
+
+	@model WebRole1.Models.HomeModel
+
 ##### SearchResult.cshtml
 
-Create a view `SearchResults.cshtml` in the folder `\webrole1.web\views\home` and paste in the following code:
+Create a view `SearchResults.cshtml` in the folder `\webrole1\views\home` and paste in the following code:
 
-	@model GWAB.Web.Models.SearchResultsModel
+	@model WebRole1.Models.SearchResultsModel
 
 	@{
 	    ViewBag.Title = "Search results";
@@ -198,6 +205,11 @@ Create a new private member variable `_searchClient` at the top of the `HomeCont
 
 	private readonly ElasticClient _searchClient;
 
+Along with using-statements for RssItem and Nest:
+
+	using Nest;
+	using WebRole1.Models;
+
 The next code snippet will take in a query, send it to elasticsearch and if there are hits NEST will map the elasticsearch documents to our RssItem-class. The method will then return the list of results in a `SearchResultsModel`-class to the view `SearchResults`.
 Paste in the following code into `HomeController`-class:
 
@@ -210,7 +222,7 @@ Paste in the following code into `HomeController`-class:
             var results = _searchClient.Search<RssItem>(s => s
                     .From(0)
                     .Size(100)
-                    .Query(q => q.QueryString(qs => qs.OnFields(f => f.Description).Query("Cantona")))
+                    .Query(q => q.QueryString(qs => qs.OnFields(f => f.Title, f => f.Description).Query(querystring)))
             );
 
             model.Items = results.Documents.ToList();
@@ -219,7 +231,7 @@ Paste in the following code into `HomeController`-class:
         return View("SearchResults", model);
     }
 
-Test the changes locally by running the solution in the Azure-emulator. Set the **GWAB.Azure**-project as "Startup Project" and hit F5. 
+Test the changes locally by running the solution in the Azure-emulator: Set the **GWAB.Azure**-project as "Startup Project" and hit F5. 
 
 Search for news from vg.no by typing text into the search box and click on "Search". Make sure you have a breakpoint in the "Search"-method so that you can monitor the execution. For complete insight into the queries that NEST performs monitor the Output-window in Visual Studio.
 
@@ -232,15 +244,12 @@ Assignment #2: Create a Windows Azure Virtual Network
 -----------------------------------------------------
 
 You now have a working **Cloud Service** with a **web role** running in Windows Azure that can run queries against elasticsearch. For now these resources are isolated inside of one 
-Cloud Service but a more realistic scenario would be that you will need several environments for development, QA and production. And having all of these 
-resources together into one network would make troubleshooting, remoting, direct access to single instances and disk access much easier than clicking through pages inside the Azure portal.
-Another argument for placing your resources into a virtual network is that you probably don't want to give access to the Azure-portal to all of your developers who will need
-access to a deployed resource. Visual Studio would be a better tool for accessing storage resources, and then using Remote Desktop to access instances inside of the network is a 
-much better practice.
+Cloud Service but a more realistic scenario would be that you will need several environments for development, QA and production. And having all of these resources together into one network would make troubleshooting, remoting, direct access to single instances and disk access much easier than navigating to each instance inside the Azure portal.
 
-So we will use an **Azure Virtual Network** to group, protect and ease access to our instances. 
-And by placing the instances into different subnets we can easily separate resources based on environment in which they belong to. And we won't have to open up any public 
-endpoints to any of the instances either.
+Another argument for placing your resources into a virtual network is that you probably don't want to give access to the Azure-portal to all of your developers who will need access to a deployed resource. A much better practice would be to use Visual Studio for accessing storage resources, VMs and instances.
+
+So we will use an **Azure Virtual Network** to group, protect and facilitate access to our instances. 
+And by placing the instances into different subnets we can easily separate resources based on environment in which they belong to. For now we won't have to open up any public endpoints to any of the instances so by placing them in the network they're only accessible inside the network.
 
 ### Create certificates for authentication
 
@@ -254,10 +263,10 @@ Use `makecert` by running "VS2012 x64 Cross Tools Command Prompt" (either 64- or
 Run the following commands:
 
 	# Generate root certificate
-    makecert -sky exchange -r -n "CN=GWAB2014 Root Certificate" -pe -a sha1 -len 2048 -ss My "c:\certs\azure-root-certificate.cer"
+    makecert -sky exchange -r -n "CN=GWAB2014-[your initials here] Root Certificate" -pe -a sha1 -len 2048 -ss My "c:\certs\azure-root-certificate.cer"
 
 	# Generate a client certificate
-	makecert -n "CN=GWAB2014 Client Certificate" -pe -sky exchange -m 96 -ss My -in "GWAB2014 Root Certificate" -is my -a sha1
+	makecert -n "CN=GWAB2014-[your initials here] Client Certificate" -pe -sky exchange -m 96 -ss My -in "GWAB2014-[your initials here] Root Certificate" -is my -a sha1
 
 Verify that you see the root- and client certificate in `certmgr.msc` under Certificates - Current User > Personal > Certificates.
 
@@ -268,11 +277,11 @@ Now that you have the necessary certificates you can create the network.
 
 1. Go to the Azure Management Portal > Networks > and click on "Create a virtual network. Or click on "+ New"-button > Network Services > Virtual Network > Custom create.
 2. Provide the following:
-	1. Name: gwab2014-[your initials here]-we-vnet
-	2. Region: West-Europe
-	3. Affinity Group: Create new
-	4. Affinity Group Name: gwab2014-[your initials here]	
-	5. Go to the next page
+	1. Name: **gwab2014-[your initials here]-we-vnet**	
+	2. Affinity Group: **Create a new affinity group**
+	3. Region: **West Europe**
+	3. Affinity Group Name: **gwab2014-[your initials here]**	
+	4. Go to the next page
 3. Skip the page with DNS-Servers and Site-to-Site/Point-to-Site Connectivity and proceed to the next page
 4. We wish to place our instances in a 10.0.1.0/24 address space for our development environment i Azure. Provide the following:
 	1. Starting IP: 10.0.1.0
@@ -286,9 +295,9 @@ Now that you have the necessary certificates you can create the network.
 5. Click on the Complete-button.
 
 
-#### Add webrole1 into the network
+#### Add WebRole1 into the network
 
-You have now created the virtual network and it's ready to accept instances. We will now modify the service configuration of the cloud service project to add webrole1 (GWAB.Web_IN_0) into the network.
+You have now created the virtual network and it's ready to accept instances. We will now modify the service configuration of the cloud service project to add `WebRole1` into the network.
 
 Open the file `ServiceConfiguration.Cloud.cscfg` and paste in the code beneath `</Role>`:
 
@@ -303,13 +312,15 @@ Open the file `ServiceConfiguration.Cloud.cscfg` and paste in the code beneath `
 	    </AddressAssignments>
 	</NetworkConfiguration>
 
-Go to the Azure Management Portal and delete your cloud service (can add resources to a network when you're performing an update/upgrade of an existing cloud service).
+Go to the Azure Management Portal and delete your cloud service (can't add resources to a network when you're performing an update/upgrade of an existing cloud service). Choose **Delete cloud service and its deployments** and click **Yes**.
 
 1. Choose "Publish" on the "GWAB.Azure"-project
-2. Create a a new cloud service (use the same name as before and use the gwab2014-[your initials here] affinity group)
+2. Create a a new cloud service 
+	1. Name: Same as before
+	2. Location: Use the **gwab2014-[your initials here]** affinity group)
 3. Click on the "Publish"-button. 
 
-Go to the virtual network dashboard on the Azure portal and monitor it as the deployment progresses. When the solution is deployed the `GWAB.Web_IN_0-instance` should appear under "resources" with its assigned IP-address from the DEV-subnet.
+Go to the virtual network dashboard on the Azure portal and monitor it as the deployment progresses. When the solution is deployed the `WebRole1_IN_0`-instance should appear under "resources" with its assigned IP-address from the DEV-subnet.
 
 
 #### Create a Point-to-Site VPN
@@ -321,9 +332,9 @@ We can use VPN to achieve this.
 
 We will need to create new address spaces for VPN and Gateway:
 
-1. Go to Azure Management Portal > Network > Configure.
-2. Under point-to-site connectivity check the "Configure Point-to-site connectivity"-box.
-3. Click on the "Add address space"-button under your DEV-subnet.
+1. Go to Azure Management Portal > Network > gwab2014-[your initials here]-we-vnet > Configure.
+2. Under point-to-site connectivity check the "Configure point-to-site connectivity"-box.
+3. Click on the "Add address space"-button under "virtual network address spaces" and your DEV-subnet.
 4. Provide the following details for VPN- and Gateway-subnets:
 	1. Starting IP: 10.0.9.0
 	2. CIDIR: /24 (251)
