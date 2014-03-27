@@ -355,7 +355,7 @@ We will need to create new address spaces for VPN and Gateway:
 
 Wait for the previous changes to apply (about 1 minute). Then click on the "Create Gateway"-button at the bottom of the page to create a Gateway. Select Yes when prompted.
 
-This will take about 15 minutes to complete. Time for coffee!
+This will take about 20-30 minutes to complete. Time for coffee!
 
 
 ##### Upload the root certificate
@@ -406,7 +406,7 @@ Send your buddy the `azure-client-certificate.pfx`-file along with the VPN-clien
 Assignment #3: Create a Windows Azure Virtual Machine with Ubuntu 13 and elasticsearch
 --------------------------------------------------------------------------------------
 
-We will go through the necessary steps to provision a VM based on a Ubuntu 13 VM-image, place it into our virtual network and use PuTTY to connect to it over SSH.
+We will go through the necessary steps to provision a VM based on a Ubuntu 13 VM-image, place it into our virtual network and use `PuTTY` to connect to it over SSH.
 
 On this VM we will install Java and elasticsearch, creating our own search cluster.
 
@@ -416,7 +416,7 @@ But before we can create the VM we will need to generate SSH-keys.
 
 #### Generate .pem and .key-files with openssl
 
-We will create a certificate for SSH and then a private key which PuTTY will use for authentication. 
+We will create a certificate for SSH and then a private key which `PuTTY` will use for authentication. 
 
 Open up a command-line tool, find `openssl` and run the following:
 
@@ -470,26 +470,27 @@ Run the following in the Azure command-line tool:
 	# Example:
 	azure vm create gwab2014-hwm-azure-elasticsearch-cluster b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-13_10-amd64-server-20130808-alpha3-en-us-30GB --vm-name hwm-elasticsearch-node0 --vm-size extrasmall --ssh 22 --ssh-cert "C:\certs\azure-vm-certificate.pem" --virtual-network-name gwab2014-hwm-we-vnet --subnet-names DEV --affinity-group gwab2014-hwm elasticsearch Password1234#!!
 
-The virtual machine is now being provisioned in Azure. We have placed the VM in the same affinity group as our virtual network, and placed it in the DEV-subnet.
+The virtual machine is now being provisioned in Azure. We have placed the VM in the same affinity group as our virtual network and cloud service, and placed it in the DEV-subnet.
 
 Let the provisioning complete before you proceed to the next step. You can follow the progress in the Azure-portal under "Virtual machines". Under "resources" on the virtual network dashboard you should see a new instance appear with assigned IP-address.
 
 
 ### Install and configure elasticsearch
 
-We will connect to our VM using PuTTY and then install elasticsearch.
+We will connect to our VM using `PuTTY` and then install elasticsearch.
 
 #### Connect with PuTTY
 
-Provide these settings in PuTTY:
+Provide these settings in `PuTTY`:
 
 * Session->Host name: `gwab2014-[your initials here]-azure-elasticsearch-cluster`
 * Connection->SSH->Auth->"Private key file for authentication": Select the `azure-private.ppk`-file from `C:\certs`. Click "Open" and select "Yes".
 
 **Important**: If you get the error message "Host does not exist" in PuTTY the connect using the VM's Cloud Service IP-address instead, or wait a bit longer as the DNS-address is being created (can take up to 5 minutes)
 
-PuTTY will start the SSH-session in a command window. Provide the user name "elasticsearch". You will now be authenticated with your private key and be connected to the VM.
+`PuTTY` will start the SSH-session in a command window. Provide the user name "elasticsearch". You will now be authenticated with your private key and be connected to the VM.
 
+> Does the white-on-black text hurt your eyes? Right-click on the Putty-window and select "Change settings...". At Window > Colours choose "Use system colours" and Apply.
 
 ### Install Java JRE
 
@@ -506,11 +507,11 @@ Verify that Java is installed by running the command:
 
 	java -version
 
-> If Java is not installed, try running "sudo apt-get update" again and then try installing Java JRE 7
+> If Java was not installed, try running "sudo apt-get update" again and then try installing Java JRE 7
 
 ### Install elasticsearch
 
-Now we are ready to install elasticsearch on our Ubuntu VM. Run the following commands in PuTTY:
+Now we are ready to install elasticsearch on our Ubuntu VM. Run the following commands in `PuTTY`:
 
 	# Download elasticsearch for Debian
 	curl -s https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.0.0.deb -o elasticsearch-1.0.0.deb
@@ -549,10 +550,10 @@ To be able to query elasticsearch we have to create public endpoint on our VM. T
 
 Go to the Azure portal > Virtual machines > [your initials here]-elasticsearch-node1 > endpoints and click "Add". Choose "Add a stand-alone endpoint" and proceed. Provide the following:
 		
-* Name: HTTP
-* Protocol: TCP
-* Public port: 9200
-* Private port: 9200
+* Name: **HTTP**
+* Protocol: **TCP**
+* Public port: **9200**
+* Private port: **9200**
 
 and save. Go to *http://gwab2014-[your initials here]-azure-elasticsearch-cluster.cloudapp.net:9200* and verify that you get elasticsearch's cluster details.
 
@@ -561,7 +562,7 @@ and save. Go to *http://gwab2014-[your initials here]-azure-elasticsearch-cluste
 
 There are particularly two plugins for elasticsearch that everyone should use. The first one is called **Head** and gives administrators an overview of documents, indexes, aliases, mappings, system information etc. The other one is called **BigDesk** and is a monitoring tool for administrators for monitoring system events and state. These tools provide you with a great start to begin learning how to use and monitor elasticsearch. Both of them are browser-based so use a browser to navigate to each after the installation.
 
-Use PuTTY and run the following commands to install these plugins:
+Use `PuTTY` and run the following commands to install these plugins:
 
 	# Install plugins Head and BigDesk
 	sudo /usr/share/elasticsearch/bin/plugin -install mobz/elasticsearch-head
@@ -624,6 +625,24 @@ Assignment #4: Create a cluster of elasticsearch VMs
 
 We have one VM setup with elasticsearch and serving as a search engine on a single public endpoint on port 9200, but it can't handle too much load. To improve upon our setup we can add more VMs, and then place them under a load-balanced endpoint. This way, all requests coming to *http://gwab2014-[your initials here]-azure-elasticsearch-cluster.cloudapp.net:9200* will be spread evenly to each VM and their internal 9200-endpoints.
 
+#### Configure endpoints
+
+In order for elasticsearch's discovery mechanism to work we will need to add them to the unicast host-list in the `elasticsearch.yml`-file.
+
+
+##### Add IPs to elasticsearch's configuration
+
+We will disable multicast UDP-discovery and put the addresses in a fixed unicast host-list.
+Use `PuTTY` and run the following command:
+
+	sudo vi /etc/elasticsearch/elasticsearch.yml
+
+	# Insert these two lines at the bottom
+	discovery.zen.ping.multicast.enabled: false
+	discovery.zen.ping.unicast.hosts: ["10.0.1.5", "10.0.1.6", "10.0.1.7"]
+
+	sudo service elasticsearch restart
+
 #### Create VMs
 
 Now that we have a single VM as an elasticsearch cluster running in Azure it might be useful to scale out to handle large load of queries. This can be scripted with Azure command-line tool. We will scale out from a 1 node cluster to a 3 node cluster by capturing an image of the VM we have running now, and then provision 3 new VMs based on this new vm-image.
@@ -639,37 +658,17 @@ In the Azure command-line tool, run the following command:
 	# Provision 3 VMs
 	FOR %? IN (1 2 3) DO azure vm create gwab2014-[your initials here]-azure-elasticsearch-cluster [your initials here]-elasticsearch-node-image --vm-name [your initials here]-elasticsearch-node%? --vm-size extrasmall --ssh 2%? --ssh-cert "C:\certs\azure-vm-certificate.pem" --virtual-network-name gwab2014-[your initials here]-we-vnet --subnet-names DEV --affinity-group gwab2014-[your initials here] --connect elasticsearch Password1234#!!
 
-Wait 2-4 minutes as each VM is provisioned.
+	# Example
+	FOR %? IN (1 2 3) DO azure vm create gwab2014-hwm-azure-elasticsearch-cluster hwm-elasticsearch-node-image --vm-name hwm-elasticsearch-node%? --vm-size extrasmall --ssh 2%? --ssh-cert "C:\certs\azure-vm-certificate.pem" --virtual-network-name gwab2014-hwm-we-vnet --subnet-names DEV --affinity-group gwab2014-hwm --connect elasticsearch Password1234#!!	
 
-
-#### Configure endpoints
-
-So we should have 3 VMs: `gwab2014-elasticsearch-node1`, `gwab2014-elasticsearch-node2` and `gwab2014-elasticsearch-node3`. In order for elasticsearch's discovery mechanism to work we will need to add them in a unicast host-list in each of the `elasticsearch.yml`-files on each VM.
-
-First, find the IPs of your VMs. If you've put them into your virtual network then look under "resources" (on the virtual network dashboard) for their IPs. In our case they should be 10.0.1.5, 10.0.1.6 and 10.0.1.7.
-
-
-##### Add IPs to elasticsearch's configuration
-
-**Important**: Repeat this step for each of your VM.
-
-We will disable multicast UDP-discovery and put the addresses in a fixed unicast host-list.
-Connect to the VM with PuTTY (SSH-ports will be 21, 22 and 23). Run the following command in PuTTY:
-
-	sudo vi /etc/elasticsearch/elasticsearch.yml
-
-	# Insert these two lines at the bottom
-	discovery.zen.ping.multicast.enabled: false
-	discovery.zen.ping.unicast.hosts: ["10.0.1.5", "10.0.1.6", "10.0.1.7"]
-
-	sudo service elasticsearch restart
+Wait 2-4 minutes as each VM is provisioned. Monitor the page Azure-portal > Virtual Machines.
 
 
 #### Add endpoints
 
 Now we need to set up a public endpoint for each VM. We will create a load-balanced endpoint on port 9200 for our cloud service in which our 3 VMs reside.
 
-1. Go to the Azure Portal > Virtual Machines > `gwab2014-elasticsearch-node1` > Endpoints
+1. Go to the Azure Portal > Virtual Machines > `[your initials here]-elasticsearch-node1` > Endpoints
 2. Click on "Add".
 3. Select "Add a stand-alone endpoint" and click Next.
 4. Provide the following:
@@ -690,7 +689,7 @@ For the two other VMs, repeat step 1 and 2.
 
 After all of the endpoints are created, navigate to *http://gwab2014-[your initials here]-azure-elasticsearch-cluster.cloudapp.net:9200/_plugin/head* and you should see all 3 nodes in the cluster.
 
-For each request to the public endpoint *http://gwab2014-[your initials here]-azure-elasticsearch-cluster.cloudapp.net:9200* Azure will load-balance traffic and forward it to one of the 3 VMs. 
+For each request to the public endpoint of your elasticsearch cluster, Azure will now load-balance traffic and forward it to one of the 3 VMs. 
 
 You've now got a load-balanced elasticsearch cluster running in Azure on Ubuntu 13!
 
@@ -714,6 +713,7 @@ Or perhaps try a new [Azure-plugin for elasticsearch](https://github.com/elastic
 ### Maximize performance
 
 Our VMs runs on an **ExtraSmall** VM-size meaning there's a limit to the number of [disks, memory and CPU-cores](http://msdn.microsoft.com/en-us/library/windowsazure/dn197896.aspx) available to the VM. Of course, upgrading to a larger VM-size is a logical next step but this only increases memory and CPU-sizes, not disk-efficiency, even though you get another disk. 
+
 A VM-disk is limited to 500 iops and for a high-performance scenario you want to use more disks so that data is spread across multiple disks. This way the iops-limit won't act as a bottleneck. To enable this for elasticsearch you need to [specify the paths for the data directories](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup-dir-layout.html) in elasticsearch's configuration.
 
 
