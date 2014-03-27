@@ -691,9 +691,18 @@ After all of the endpoints are created, navigate to *http://gwab2014-[your initi
 
 For each request to the public endpoint of your elasticsearch cluster, Azure will now load-balance traffic and forward it to one of the 3 VMs. 
 
-You've now got a load-balanced elasticsearch cluster running in Azure on Ubuntu 13!
+
+#### Use your own elasticsearch for search
+
+Edit your `HomeController`-file in **WebRole1**-project the by changing the url of the elasticsearch-service to *http://gwab2014-[your initials here]-azure-elasticsearch-cluster.cloudapp.net:9200*. Re-deploy and test that you now get search-results from your cluster.
+
+
+### End of assignment
+
+You've now got a load-balanced elasticsearch cluster running in Azure on Ubuntu 13 with an ASP.net MVC website querying it!
 
 :-)
+
 
 Remarks
 -------
